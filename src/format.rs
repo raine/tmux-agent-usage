@@ -219,22 +219,24 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                 .map(|p| format!(" {}", percent_spark(p, t)))
                 .unwrap_or_default();
 
-            let mut out = format!(
-                "{name_color}{padded_name} {}│ {}{pri_label} {pri}{pri_spark} {}│ {}{sec_label} {sec}{sec_spark}",
-                t.dim, t.dim, t.dim, t.dim
-            );
+            let pri_reset = s
+                .primary
+                .as_ref()
+                .and_then(|w| w.resets_at_unix)
+                .map(|r| format!(" {}↻ {}", t.dim, format_time_remaining(r)))
+                .unwrap_or_default();
 
-            if let Some(w) = s.secondary.as_ref() {
-                if let Some(resets_at) = w.resets_at_unix {
-                    out.push_str(&format!(
-                        " {}│ ↻ {}",
-                        t.dim,
-                        format_time_remaining(resets_at)
-                    ));
-                }
-            }
-            out.push_str(t.reset);
-            out
+            let sec_reset = s
+                .secondary
+                .as_ref()
+                .and_then(|w| w.resets_at_unix)
+                .map(|r| format!(" {}↻ {}", t.dim, format_time_remaining(r)))
+                .unwrap_or_default();
+
+            format!(
+                "{name_color}{padded_name} {}│ {}{pri_label} {pri}{pri_spark}{pri_reset} {}│ {}{sec_label} {sec}{sec_spark}{sec_reset}{}",
+                t.dim, t.dim, t.dim, t.dim, t.reset
+            )
         }
     }
 }
