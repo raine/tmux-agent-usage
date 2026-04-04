@@ -2,6 +2,9 @@
 name = "agent-usage"
 version = "0.1.1"
 edition = "2021"
+description = "Monitor AI coding agent API usage across providers"
+license = "MIT"
+repository = "https://github.com/raine/tmux-agent-usage"
 
 [dependencies]
 anyhow = "1"
