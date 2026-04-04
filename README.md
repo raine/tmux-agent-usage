@@ -120,19 +120,13 @@ cargo run -- claude --debug-probe
 
 ## Related projects
 
-- [workmux](https://github.com/raine/workmux) — Git worktrees + tmux windows for
-  parallel AI agent workflows
-- [claude-history](https://github.com/raine/claude-history) — Fuzzy-search Claude
-  Code conversation history
-- [git-surgeon](https://github.com/raine/git-surgeon) — Surgical, non-interactive
-  git hunk control for AI agents
-- [consult-llm-mcp](https://github.com/raine/consult-llm-mcp) — MCP server for
-  consulting powerful reasoning models in Claude Code
 - [tmux-file-picker](https://github.com/raine/tmux-file-picker) — A fuzzy file
   picker in a tmux popup
-- [tmux-inspect](https://github.com/raine/tmux-inspect) — Inspect objects in dev
-  using tmux popups and jless
-- [tmux-tools](https://github.com/raine/tmux-tools) — Small tmux utilities for
-  session management
-- [tmux-bro](https://github.com/raine/tmux-bro) — Your friendly tmux session
-  manager
+- [workmux](https://github.com/raine/workmux) — Git worktrees + tmux windows for
+  parallel AI agent workflows
+- [claude-history](https://github.com/raine/claude-history) — Fuzzy-search
+  Claude Code conversation history
+- [git-surgeon](https://github.com/raine/git-surgeon) — Surgical,
+  non-interactive git hunk control for AI agents
+- [consult-llm-mcp](https://github.com/raine/consult-llm-mcp) — MCP server for
+  consulting powerful reasoning models in Claude Code
