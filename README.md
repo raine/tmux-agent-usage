@@ -4,9 +4,7 @@ Display AI agent rate limit usage in your tmux status bar. Shows session and
 weekly utilization for Codex and Claude with color-coded percentages and a
 braille reset indicator.
 
-```
-Codex 5h:11% wk:26% ⣇ │ Claude 5h:59% wk:64% ⡀ │ 04.04. 12:49
-```
+<img src="meta/screenshot.png" alt="agent-usage tmux status bar" width="500" />
 
 - **Green** < 50%, **yellow** 50–79%, **red** 80%+
 - Braille character after weekly % shows time until reset (fuller = more time)
@@ -108,7 +106,7 @@ cargo run -- claude --debug-probe
 
 ## Related projects
 
-- [workmux](https://github.com/raine/workmux) — Git worktrees + tmux windows
-  for parallel AI agent workflows
+- [workmux](https://github.com/raine/workmux) — Git worktrees + tmux windows for
+  parallel AI agent workflows
 - [CodexBar](https://github.com/steipete/CodexBar) — macOS menu bar app for
   agent rate limits (inspiration for this project)
