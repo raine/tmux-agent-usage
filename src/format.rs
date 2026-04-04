@@ -200,15 +200,31 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
             )
         }
         ColorMode::Ansi => {
+            let padded_name = format!("{name:7}");
+
+            let pri_spark = s
+                .primary
+                .as_ref()
+                .and_then(|w| w.used_percent)
+                .map(|p| format!(" {}", percent_spark(p, t)))
+                .unwrap_or_default();
+
+            let sec_spark = s
+                .secondary
+                .as_ref()
+                .and_then(|w| w.used_percent)
+                .map(|p| format!(" {}", percent_spark(p, t)))
+                .unwrap_or_default();
+
             let mut out = format!(
-                "{name_color}{name} {}{pri_label}:{pri} {}{sec_label}:{sec}{reset}",
-                t.dim, t.dim
+                "{name_color}{padded_name} {}│ {}{pri_label} {pri}{pri_spark} {}│ {}{sec_label} {sec}{sec_spark}",
+                t.dim, t.dim, t.dim, t.dim
             );
-            // Show reset time for windows that have it
+
             if let Some(w) = s.secondary.as_ref() {
                 if let Some(resets_at) = w.resets_at_unix {
                     out.push_str(&format!(
-                        " {}resets {}",
+                        " {}│ ↻ {}",
                         t.dim,
                         format_time_remaining(resets_at)
                     ));
@@ -230,6 +246,6 @@ pub fn render_unavailable_with_mode(name: &str, mode: ColorMode) -> String {
     match mode {
         ColorMode::TmuxCompact => format!("{}{} · {}│ ", t.dim, name, t.dim),
         ColorMode::Tmux => format!("{}{}  n/a {}│", t.dim, name, t.dim),
-        ColorMode::Ansi => format!("{}{} n/a{}", t.dim, name, t.reset),
+        ColorMode::Ansi => format!("{}{:7} │ n/a{}", t.dim, name, t.reset),
     }
 }
