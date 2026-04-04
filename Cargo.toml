@@ -1,6 +1,6 @@
 [package]
 name = "agent-usage"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 description = "Monitor AI coding agent API usage across providers"
 license = "MIT"

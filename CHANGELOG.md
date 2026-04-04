@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.3 (2026-04-04)
+
+- ANSI output now shows reset time for both the 5h and weekly windows
+- ANSI output percentage values are right-aligned for consistent column width
+- Weekly window label changed from `wk` to `week` in ANSI output
+
 ## v0.1.2 (2026-04-04)
 
 - ANSI output now shows columns aligned with separator bars for easier reading
