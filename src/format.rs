@@ -50,8 +50,8 @@ fn theme(mode: ColorMode) -> &'static Theme {
 
 fn short_name(provider: ProviderId) -> &'static str {
     match provider {
-        ProviderId::Codex => "Cdx",
-        ProviderId::Claude => "Cld",
+        ProviderId::Codex => "O",
+        ProviderId::Claude => "C",
     }
 }
 
@@ -191,7 +191,7 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                 .map(|p| percent_spark(p, t))
                 .unwrap_or_else(|| format!("{}·", t.dim));
             let rst = reset_spark(s.secondary.as_ref(), t);
-            format!("{name_color}{short}{pri_spark}{sec_spark}{rst}{} │ ", t.dim)
+            format!("{name_color}{short} {pri_spark}{sec_spark}{rst} {} │ ", t.dim)
         }
         ColorMode::Tmux => {
             format!(
