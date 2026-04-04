@@ -8,8 +8,8 @@ pub enum ColorMode {
     Ansi,
 }
 
-// Pie circles: 5 levels from empty to full (consistent width)
-const PIE_LEVELS: &[char] = &['○', '◔', '◑', '◕', '●'];
+// Spark bars: 8 levels from low to full
+const SPARK_LEVELS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 
 struct Theme {
     dim: &'static str,
@@ -55,10 +55,37 @@ fn short_name(provider: ProviderId) -> &'static str {
     }
 }
 
-fn percent_pie(pct: u8, t: &Theme) -> String {
-    let idx = (pct as usize * (PIE_LEVELS.len() - 1)) / 100;
-    let ch = PIE_LEVELS[idx];
+fn percent_spark(pct: u8, t: &Theme) -> String {
+    let idx = (pct as usize * (SPARK_LEVELS.len() - 1)) / 100;
+    let ch = SPARK_LEVELS[idx];
     format!("{}{ch}", percent_color(pct, t))
+}
+
+/// Spark bar for time remaining (inverted: more time left = taller bar).
+/// Uses dim color since it's supplementary info.
+fn reset_spark(window: Option<&Window>, t: &Theme) -> String {
+    let Some(w) = window else {
+        return format!("{}▁", t.dim);
+    };
+    let Some(resets_at) = w.resets_at_unix else {
+        return format!("{}▁", t.dim);
+    };
+    let Some(window_mins) = w.window_minutes else {
+        return format!("{}▁", t.dim);
+    };
+
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
+
+    let remaining_secs = (resets_at - now).max(0) as f64;
+    let total_secs = window_mins as f64 * 60.0;
+    let fraction = (remaining_secs / total_secs).clamp(0.0, 1.0);
+
+    let idx = (fraction * (SPARK_LEVELS.len() - 1) as f64).round() as usize;
+    let ch = SPARK_LEVELS[idx];
+    format!("{}{ch}", t.dim)
 }
 
 fn percent_color(pct: u8, t: &Theme) -> &'static str {
@@ -151,20 +178,20 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
     match mode {
         ColorMode::TmuxCompact => {
             let short = short_name(s.provider);
-            let pri_pie = s
+            let pri_spark = s
                 .primary
                 .as_ref()
                 .and_then(|w| w.used_percent)
-                .map(|p| percent_pie(p, t))
+                .map(|p| percent_spark(p, t))
                 .unwrap_or_else(|| format!("{}·", t.dim));
-            let sec_pie = s
+            let sec_spark = s
                 .secondary
                 .as_ref()
                 .and_then(|w| w.used_percent)
-                .map(|p| percent_pie(p, t))
+                .map(|p| percent_spark(p, t))
                 .unwrap_or_else(|| format!("{}·", t.dim));
-            let reset = reset_indicator(s.secondary.as_ref(), t);
-            format!("{name_color}{short} {pri_pie}{sec_pie}{reset}{} │ ", t.dim)
+            let rst = reset_spark(s.secondary.as_ref(), t);
+            format!("{name_color}{short}{pri_spark}{sec_spark}{rst}{} │ ", t.dim)
         }
         ColorMode::Tmux => {
             format!(
