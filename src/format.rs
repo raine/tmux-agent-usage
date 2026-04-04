@@ -8,8 +8,8 @@ pub enum ColorMode {
     Ansi,
 }
 
-// Block elements: 8 levels from empty to full
-const BLOCK_LEVELS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+// Pie circles: 5 levels from empty to full (consistent width)
+const PIE_LEVELS: &[char] = &['○', '◔', '◑', '◕', '●'];
 
 struct Theme {
     dim: &'static str,
@@ -55,9 +55,9 @@ fn short_name(provider: ProviderId) -> &'static str {
     }
 }
 
-fn percent_block(pct: u8, t: &Theme) -> String {
-    let idx = (pct as usize * (BLOCK_LEVELS.len() - 1)) / 100;
-    let ch = BLOCK_LEVELS[idx];
+fn percent_pie(pct: u8, t: &Theme) -> String {
+    let idx = (pct as usize * (PIE_LEVELS.len() - 1)) / 100;
+    let ch = PIE_LEVELS[idx];
     format!("{}{ch}", percent_color(pct, t))
 }
 
@@ -151,23 +151,20 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
     match mode {
         ColorMode::TmuxCompact => {
             let short = short_name(s.provider);
-            let pri_block = s
+            let pri_pie = s
                 .primary
                 .as_ref()
                 .and_then(|w| w.used_percent)
-                .map(|p| percent_block(p, t))
+                .map(|p| percent_pie(p, t))
                 .unwrap_or_else(|| format!("{}·", t.dim));
-            let sec_block = s
+            let sec_pie = s
                 .secondary
                 .as_ref()
                 .and_then(|w| w.used_percent)
-                .map(|p| percent_block(p, t))
+                .map(|p| percent_pie(p, t))
                 .unwrap_or_else(|| format!("{}·", t.dim));
             let reset = reset_indicator(s.secondary.as_ref(), t);
-            format!(
-                "{name_color}{short}{pri_block}{sec_block}{reset}{} │ ",
-                t.dim
-            )
+            format!("{name_color}{short} {pri_pie}{sec_pie}{reset}{} │ ", t.dim)
         }
         ColorMode::Tmux => {
             format!(
