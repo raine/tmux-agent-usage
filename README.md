@@ -12,30 +12,44 @@ braille reset indicator.
 
 ## Install
 
+### Shell (recommended)
+
 ```bash
-cargo install --path .
+curl -fsSL https://raw.githubusercontent.com/raine/tmux-agent-usage/main/scripts/install.sh | bash
 ```
 
-### tmux setup (manual)
+### Homebrew
+
+```bash
+brew install raine/agent-usage/agent-usage
+```
+
+### Cargo
+
+```bash
+cargo install --git https://github.com/raine/tmux-agent-usage
+```
+
+## tmux setup
+
+### With TPM
 
 Add to `~/.tmux.conf`:
 
 ```tmux
-set -g status-right-length 120
-set -g status-right '#(agent-usage codex)#(agent-usage claude)#[fg=green]%d.%m. %H:%M'
-```
-
-### tmux setup (TPM plugin)
-
-```tmux
-# Optional: configure which providers to show (default: codex)
+# Configure which providers to show (default: codex)
 set -g @agent-usage-providers "codex claude"
 
-# Local install:
-run-shell /path/to/tmux-agent-usage/plugin/tmux-agent-usage.tmux
+set -g @plugin 'raine/tmux-agent-usage'
+```
 
-# Or via TPM (once published to GitHub):
-# set -g @plugin 'raine/tmux-agent-usage'
+The plugin auto-installs the binary if not found in PATH.
+
+### Manual
+
+```tmux
+set -g status-right-length 120
+set -g status-right '#(agent-usage codex)#(agent-usage claude)#[fg=green]%d.%m. %H:%M'
 ```
 
 Then reload: `tmux source ~/.tmux.conf`
@@ -108,5 +122,3 @@ cargo run -- claude --debug-probe
 
 - [workmux](https://github.com/raine/workmux) — Git worktrees + tmux windows for
   parallel AI agent workflows
-- [CodexBar](https://github.com/steipete/CodexBar) — macOS menu bar app for
-  agent rate limits (inspiration for this project)
