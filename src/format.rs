@@ -104,10 +104,25 @@ fn window_label(minutes: Option<u16>, fallback: &str) -> &str {
     }
 }
 
+fn window_label_long(minutes: Option<u16>, fallback: &str) -> &str {
+    match minutes {
+        Some(300) => "  5h",
+        Some(10080) => "week",
+        _ => fallback,
+    }
+}
+
 fn render_percent(pct: Option<u8>, t: &Theme) -> String {
     match pct {
         Some(v) => format!("{}{v}%", percent_color(v, t)),
         None => format!("{}n/a", t.dim),
+    }
+}
+
+fn render_percent_aligned(pct: Option<u8>, t: &Theme) -> String {
+    match pct {
+        Some(v) => format!("{}{v:>3}%", percent_color(v, t)),
+        None => format!("{} n/a", t.dim),
     }
 }
 
@@ -204,6 +219,10 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
         }
         ColorMode::Ansi => {
             let padded_name = format!("{name:7}");
+            let pri_label_long = window_label_long(s.primary.as_ref().and_then(|w| w.window_minutes), "pri");
+            let sec_label_long = window_label_long(s.secondary.as_ref().and_then(|w| w.window_minutes), "sec");
+            let pri_a = render_percent_aligned(s.primary.as_ref().and_then(|w| w.used_percent), t);
+            let sec_a = render_percent_aligned(s.secondary.as_ref().and_then(|w| w.used_percent), t);
 
             let pri_spark = s
                 .primary
@@ -234,7 +253,7 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                 .unwrap_or_default();
 
             format!(
-                "{name_color}{padded_name} {}│ {}{pri_label} {pri}{pri_spark}{pri_reset} {}│ {}{sec_label} {sec}{sec_spark}{sec_reset}{}",
+                "{name_color}{padded_name} {}│ {}{pri_label_long} {pri_a}{pri_spark}{pri_reset} {}│ {}{sec_label_long} {sec_a}{sec_spark}{sec_reset}{}",
                 t.dim, t.dim, t.dim, t.dim, t.reset
             )
         }
