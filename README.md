@@ -72,16 +72,16 @@ Code.
 ## Usage
 
 ```bash
-# Normal usage (prints tmux-formatted status line)
+# Show all providers
+agent-usage
+
+# Show a specific provider
 agent-usage codex
 agent-usage claude
 
 # Debug mode (prints raw JSON snapshot, bypasses cache)
 agent-usage --debug-probe
 agent-usage claude --debug-probe
-
-# Provider selection via env var
-AGENT_USAGE_PROVIDER=claude agent-usage
 ```
 
 ## How it works

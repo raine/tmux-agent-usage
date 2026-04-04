@@ -15,7 +15,7 @@ fn main() {
         ColorMode::Ansi
     };
 
-    // Resolve provider: CLI arg > env var > default (codex)
+    // Resolve provider: CLI arg > env var > None (show all)
     let provider_arg = args
         .iter()
         .filter(|a| !a.starts_with('-'))
@@ -28,9 +28,31 @@ fn main() {
                 .ok()
                 .as_deref()
                 .and_then(provider::parse_provider_arg)
-        })
-        .unwrap_or(model::ProviderId::Codex);
+        });
 
+    match provider_id {
+        Some(id) => run_single(id, mode, debug),
+        None => {
+            if debug {
+                // Debug all providers
+                for p in provider::registry() {
+                    match p.refresh() {
+                        Ok(s) => println!("{}", serde_json::to_string_pretty(&s).unwrap()),
+                        Err(e) => eprintln!("{}: probe failed: {e}", p.display_name()),
+                    }
+                }
+            } else {
+                // Show all providers
+                for p in provider::registry() {
+                    let output = get_output(p.as_ref(), mode);
+                    println!("{output}");
+                }
+            }
+        }
+    }
+}
+
+fn run_single(provider_id: model::ProviderId, mode: ColorMode, debug: bool) {
     let p = match provider::by_id(provider_id) {
         Some(p) => p,
         None => {
@@ -44,9 +66,7 @@ fn main() {
 
     if debug {
         match p.refresh() {
-            Ok(s) => {
-                println!("{}", serde_json::to_string_pretty(&s).unwrap());
-            }
+            Ok(s) => println!("{}", serde_json::to_string_pretty(&s).unwrap()),
             Err(e) => {
                 eprintln!("probe failed: {e}");
                 std::process::exit(1);
@@ -55,41 +75,38 @@ fn main() {
         return;
     }
 
-    let path = cache::path_for(provider_id);
+    println!("{}", get_output(p.as_ref(), mode));
+}
+
+fn get_output(p: &dyn provider::Provider, mode: ColorMode) -> String {
+    let path = cache::path_for(p.id());
     let lock = cache::lock_path(&path);
     let cached = cache::load(&path);
 
-    // Fresh cache: print and exit fast
+    // Fresh cache: return immediately
     if let Some(s) = cached.as_ref() {
         if cache::is_fresh(s, TTL_SECS) {
-            println!("{}", format::render_with_mode(Some(s), mode));
-            return;
+            return format::render_with_mode(Some(s), mode);
         }
     }
 
-    // Stale cache exists: print it now (no tmux lag), then try to refresh
+    // Stale cache: use it, try refresh
     if let Some(s) = cached.as_ref() {
-        println!("{}", format::render_with_mode(Some(s), mode));
-
+        let output = format::render_with_mode(Some(s), mode);
         if let Some(_lock_file) = cache::try_lock(&lock) {
             if let Ok(snapshot) = p.refresh() {
                 let _ = cache::save(&path, &snapshot);
             }
         }
-        return;
+        return output;
     }
 
-    // No cache at all: must probe synchronously (first run experience)
+    // No cache: probe synchronously
     match p.refresh() {
         Ok(snapshot) => {
             let _ = cache::save(&path, &snapshot);
-            println!("{}", format::render_with_mode(Some(&snapshot), mode));
+            format::render_with_mode(Some(&snapshot), mode)
         }
-        Err(_) => {
-            println!(
-                "{}",
-                format::render_unavailable_with_mode(p.display_name(), mode)
-            );
-        }
+        Err(_) => format::render_unavailable_with_mode(p.display_name(), mode),
     }
 }
