@@ -1,3 +1,4 @@
+pub mod claude;
 pub mod codex;
 
 use crate::model::{ProviderId, Snapshot};
@@ -10,7 +11,10 @@ pub trait Provider {
 }
 
 pub fn registry() -> Vec<Box<dyn Provider>> {
-    vec![Box::new(codex::CodexProvider::new())]
+    vec![
+        Box::new(codex::CodexProvider::new()),
+        Box::new(claude::ClaudeProvider::new()),
+    ]
 }
 
 pub fn by_id(id: ProviderId) -> Option<Box<dyn Provider>> {
