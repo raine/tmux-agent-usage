@@ -1,4 +1,4 @@
-# agent-usage
+# tmux-agent-usage
 
 Display AI agent rate limit usage in your tmux status bar. Shows session and
 weekly utilization for Codex and Claude with color-coded percentages and a
