@@ -85,11 +85,11 @@ fn render_none_snapshot() {
 fn render_unavailable_uses_provider_name() {
     assert_eq!(
         format::render_unavailable("Claude"),
-        format!("{DIM}Claude n/a {DIM}│")
+        format!("{DIM}Claude  n/a {DIM}│")
     );
     assert_eq!(
         format::render_unavailable("Codex"),
-        format!("{DIM}Codex n/a {DIM}│")
+        format!("{DIM}Codex  n/a {DIM}│")
     );
 }
 

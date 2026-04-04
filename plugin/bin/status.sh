@@ -5,7 +5,7 @@
 PROVIDER="${1:-codex}"
 
 if command -v agent-usage >/dev/null 2>&1; then
-  agent-usage "$PROVIDER" || printf '%s n/a\n' "$PROVIDER"
+  agent-usage "$PROVIDER" --tmux || printf '%s n/a\n' "$PROVIDER"
 else
   printf '%s n/a\n' "$PROVIDER"
 fi

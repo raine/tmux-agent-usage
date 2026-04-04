@@ -1,20 +1,54 @@
 use crate::model::{ProviderId, Snapshot, Window};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const DIM: &str = "#[fg=colour245]";
-const CLAUDE_ORANGE: &str = "#[fg=#d97757]";
-const GREEN: &str = "#[fg=colour114]";
-const YELLOW: &str = "#[fg=colour221]";
-const RED: &str = "#[fg=colour203]";
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ColorMode {
+    Tmux,
+    Ansi,
+}
+
+struct Theme {
+    dim: &'static str,
+    claude_orange: &'static str,
+    green: &'static str,
+    yellow: &'static str,
+    red: &'static str,
+    reset: &'static str,
+}
+
+const TMUX_THEME: Theme = Theme {
+    dim: "#[fg=colour245]",
+    claude_orange: "#[fg=#d97757]",
+    green: "#[fg=colour114]",
+    yellow: "#[fg=colour221]",
+    red: "#[fg=colour203]",
+    reset: "",
+};
+
+const ANSI_THEME: Theme = Theme {
+    dim: "\x1b[38;5;245m",
+    claude_orange: "\x1b[38;2;217;119;87m",
+    green: "\x1b[38;5;114m",
+    yellow: "\x1b[38;5;221m",
+    red: "\x1b[38;5;203m",
+    reset: "\x1b[0m",
+};
 
 // Braille characters: 8 levels from empty to full (bottom-up fill)
 const BRAILLE_LEVELS: &[char] = &['⠀', '⡀', '⡄', '⡆', '⡇', '⣇', '⣧', '⣷', '⣿'];
 
-fn percent_color(pct: u8) -> &'static str {
+fn theme(mode: ColorMode) -> &'static Theme {
+    match mode {
+        ColorMode::Tmux => &TMUX_THEME,
+        ColorMode::Ansi => &ANSI_THEME,
+    }
+}
+
+fn percent_color(pct: u8, t: &Theme) -> &'static str {
     match pct {
-        0..=49 => GREEN,
-        50..=79 => YELLOW,
-        _ => RED,
+        0..=49 => t.green,
+        50..=79 => t.yellow,
+        _ => t.red,
     }
 }
 
@@ -26,16 +60,14 @@ fn window_label(minutes: Option<u16>, fallback: &str) -> &str {
     }
 }
 
-fn render_percent(pct: Option<u8>) -> String {
+fn render_percent(pct: Option<u8>, t: &Theme) -> String {
     match pct {
-        Some(v) => format!("{}{v}%", percent_color(v)),
-        None => format!("{DIM}n/a"),
+        Some(v) => format!("{}{v}%", percent_color(v, t)),
+        None => format!("{}n/a", t.dim),
     }
 }
 
-/// Braille indicator showing time remaining until window reset.
-/// Fuller = more time left, emptier = resetting soon.
-fn reset_indicator(window: Option<&Window>) -> String {
+fn reset_indicator(window: Option<&Window>, t: &Theme) -> String {
     let Some(w) = window else {
         return String::new();
     };
@@ -58,31 +90,84 @@ fn reset_indicator(window: Option<&Window>) -> String {
     let idx = (fraction * (BRAILLE_LEVELS.len() - 1) as f64).round() as usize;
     let ch = BRAILLE_LEVELS[idx];
 
-    format!(" {DIM}{ch}")
+    format!(" {}{ch}", t.dim)
+}
+
+fn format_time_remaining(resets_at: i64) -> String {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
+    let remaining = (resets_at - now).max(0);
+    let hours = remaining / 3600;
+    let minutes = (remaining % 3600) / 60;
+    if hours > 0 {
+        format!("{hours}h{minutes:02}m")
+    } else {
+        format!("{minutes}m")
+    }
 }
 
 pub fn render(snapshot: Option<&Snapshot>) -> String {
+    render_with_mode(snapshot, ColorMode::Tmux)
+}
+
+pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String {
+    let t = theme(mode);
     let Some(s) = snapshot else {
-        return format!("{DIM}n/a");
+        return format!("{}n/a{}", t.dim, t.reset);
     };
 
     let name = s.provider.display_name();
     let name_color = match s.provider {
-        ProviderId::Claude => CLAUDE_ORANGE,
-        _ => DIM,
+        ProviderId::Claude => t.claude_orange,
+        _ => t.dim,
     };
 
     let pri_label = window_label(s.primary.as_ref().and_then(|w| w.window_minutes), "pri");
     let sec_label = window_label(s.secondary.as_ref().and_then(|w| w.window_minutes), "sec");
 
-    let pri = render_percent(s.primary.as_ref().and_then(|w| w.used_percent));
-    let sec = render_percent(s.secondary.as_ref().and_then(|w| w.used_percent));
-    let reset = reset_indicator(s.secondary.as_ref());
+    let pri = render_percent(s.primary.as_ref().and_then(|w| w.used_percent), t);
+    let sec = render_percent(s.secondary.as_ref().and_then(|w| w.used_percent), t);
+    let reset = reset_indicator(s.secondary.as_ref(), t);
 
-    format!("{name_color}{name} {DIM}{pri_label}:{pri} {DIM}{sec_label}:{sec}{reset}{DIM} │ ")
+    match mode {
+        ColorMode::Tmux => {
+            format!(
+                "{name_color}{name} {}{pri_label}:{pri} {}{sec_label}:{sec}{reset}{} │ ",
+                t.dim, t.dim, t.dim
+            )
+        }
+        ColorMode::Ansi => {
+            let mut out = format!(
+                "{name_color}{name} {}{pri_label}:{pri} {}{sec_label}:{sec}{reset}",
+                t.dim, t.dim
+            );
+            // Show reset time for windows that have it
+            if let Some(w) = s.secondary.as_ref() {
+                if let Some(resets_at) = w.resets_at_unix {
+                    out.push_str(&format!(
+                        " {}resets {}",
+                        t.dim,
+                        format_time_remaining(resets_at)
+                    ));
+                }
+            }
+            out.push_str(t.reset);
+            out
+        }
+    }
 }
 
 /// Render a failure line for a specific provider.
 pub fn render_unavailable(name: &str) -> String {
-    format!("{DIM}{name} n/a {DIM}│")
+    render_unavailable_with_mode(name, ColorMode::Tmux)
+}
+
+pub fn render_unavailable_with_mode(name: &str, mode: ColorMode) -> String {
+    let t = theme(mode);
+    match mode {
+        ColorMode::Tmux => format!("{}{}  n/a {}│", t.dim, name, t.dim),
+        ColorMode::Ansi => format!("{}{} n/a{}", t.dim, name, t.reset),
+    }
 }
