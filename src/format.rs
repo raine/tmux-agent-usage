@@ -143,10 +143,13 @@ fn format_time_remaining(resets_at: i64) -> String {
         .unwrap()
         .as_secs() as i64;
     let remaining = (resets_at - now).max(0);
-    let hours = remaining / 3600;
+    let days = remaining / 86400;
+    let hours = (remaining % 86400) / 3600;
     let minutes = (remaining % 3600) / 60;
-    if hours > 0 {
-        format!("{hours}h{minutes:02}m")
+    if days > 0 {
+        format!("{days}d {hours}h")
+    } else if hours > 0 {
+        format!("{hours}h {minutes:02}m")
     } else {
         format!("{minutes}m")
     }
