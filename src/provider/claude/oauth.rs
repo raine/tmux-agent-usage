@@ -25,6 +25,14 @@ struct OAuthEntry {
 }
 
 fn load_credentials() -> Result<String> {
+    // Try macOS Keychain first (Claude Code keeps tokens fresh there)
+    if let Ok(raw) = load_from_keychain() {
+        if let Ok(token) = extract_token(&raw) {
+            return Ok(token);
+        }
+    }
+
+    // Fall back to credentials file
     let home = directories::BaseDirs::new()
         .ok_or_else(|| anyhow!("no home directory"))?
         .home_dir()
@@ -32,7 +40,30 @@ fn load_credentials() -> Result<String> {
     let path = home.join(".claude/.credentials.json");
     let raw =
         std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let creds: CredentialsFile = serde_json::from_str(&raw).context("parsing credentials")?;
+    extract_token(&raw)
+}
+
+fn load_from_keychain() -> Result<String> {
+    let user = std::env::var("USER").context("no USER env var")?;
+    let output = std::process::Command::new("security")
+        .args([
+            "find-generic-password",
+            "-s",
+            "Claude Code-credentials",
+            "-a",
+            &user,
+            "-w",
+        ])
+        .output()
+        .context("running security command")?;
+    if !output.status.success() {
+        bail!("no keychain entry found");
+    }
+    String::from_utf8(output.stdout).context("keychain output not utf8")
+}
+
+fn extract_token(raw: &str) -> Result<String> {
+    let creds: CredentialsFile = serde_json::from_str(raw).context("parsing credentials")?;
     let entry = creds
         .oauth
         .or(creds.oauth_legacy)
@@ -116,9 +147,7 @@ pub fn probe() -> Result<Snapshot> {
 
 fn to_window(w: UsageWindow, window_minutes: u16) -> Window {
     Window {
-        used_percent: w
-            .utilization
-            .map(|u| (u * 100.0).round().clamp(0.0, 100.0) as u8),
+        used_percent: w.utilization.map(|u| u.round().clamp(0.0, 100.0) as u8),
         window_minutes: Some(window_minutes),
         resets_at_unix: w.resets_at.as_deref().and_then(parse_iso8601),
     }
@@ -212,8 +241,8 @@ mod tests {
     #[test]
     fn usage_response_full() {
         let json = r#"{
-            "five_hour": {"utilization": 0.28, "resets_at": "2026-04-04T15:00:00Z"},
-            "seven_day": {"utilization": 0.63, "resets_at": "2026-04-10T00:00:00Z"},
+            "five_hour": {"utilization": 28.0, "resets_at": "2026-04-04T15:00:00Z"},
+            "seven_day": {"utilization": 63.0, "resets_at": "2026-04-10T00:00:00Z"},
             "extra_usage": {"is_enabled": true, "monthly_limit": 100.0, "used_credits": 42.10}
         }"#;
         let resp: UsageResponse = serde_json::from_str(json).unwrap();
@@ -228,7 +257,7 @@ mod tests {
 
     #[test]
     fn usage_response_partial() {
-        let json = r#"{"five_hour": {"utilization": 0.5}}"#;
+        let json = r#"{"five_hour": {"utilization": 50.0}}"#;
         let resp: UsageResponse = serde_json::from_str(json).unwrap();
         assert!(resp.seven_day.is_none());
         assert!(resp.extra_usage.is_none());
