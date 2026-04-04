@@ -21,7 +21,7 @@ fn render_full_codex_snapshot() {
         }),
         observed_at_unix: 0,
     };
-    assert_eq!(format::render(Some(&s)), "Codex 5h:72% wk:41% cr:$18.20");
+    assert_eq!(format::render(Some(&s)), "Codex 5h:72% wk:41%");
 }
 
 #[test]
@@ -60,7 +60,7 @@ fn render_unlimited_credits() {
         }),
         observed_at_unix: 0,
     };
-    assert_eq!(format::render(Some(&s)), "Codex 5h:10% wk:5% cr:unlim");
+    assert_eq!(format::render(Some(&s)), "Codex 5h:10% wk:5%");
 }
 
 #[test]

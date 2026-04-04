@@ -31,17 +31,7 @@ pub fn render(snapshot: Option<&Snapshot>) -> String {
         .map(|v| format!("{v}%"))
         .unwrap_or_else(|| "n/a".to_string());
 
-    let mut out = format!("{name} {pri_label}:{pri} {sec_label}:{sec}");
-
-    if let Some(cr) = &s.credits {
-        if cr.is_unlimited {
-            out.push_str(" cr:unlim");
-        } else if let Some(rem) = cr.remaining {
-            out.push_str(&format!(" cr:${rem:.2}"));
-        }
-    }
-
-    out
+    format!("{name} {pri_label}:{pri} {sec_label}:{sec}")
 }
 
 /// Render a failure line for a specific provider.
