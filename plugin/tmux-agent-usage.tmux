@@ -16,10 +16,17 @@ fi
 providers="$(tmux show-option -gqv @agent-usage-providers)"
 providers="${providers:-codex}"
 
+# Display style: set -g @agent-usage-style "compact" (or "default")
+style="$(tmux show-option -gqv @agent-usage-style)"
+case "$style" in
+    compact) style_flag="--compact" ;;
+    *)       style_flag="--tmux" ;;
+esac
+
 # Build status-right fragments for each provider
 fragments=""
 for provider in $providers; do
-    fragments="${fragments}#($CURRENT_DIR/bin/status.sh $provider)"
+    fragments="${fragments}#($CURRENT_DIR/bin/status.sh $provider $style_flag)"
 done
 
 # Prepend agent usage before existing status-right content (e.g. clock)

@@ -3,9 +3,10 @@
 # not produce blank tmux output.
 
 PROVIDER="${1:-codex}"
+STYLE="${2:---tmux}"
 
 if command -v agent-usage >/dev/null 2>&1; then
-  agent-usage "$PROVIDER" --tmux || printf '%s n/a\n' "$PROVIDER"
+  agent-usage "$PROVIDER" "$STYLE" || printf '%s n/a\n' "$PROVIDER"
 else
   printf '%s n/a\n' "$PROVIDER"
 fi
