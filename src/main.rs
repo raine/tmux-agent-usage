@@ -9,7 +9,10 @@ fn main() {
 
     let debug = args.iter().any(|a| a == "--debug-probe");
     let tmux = args.iter().any(|a| a == "--tmux");
-    let mode = if tmux {
+    let compact = args.iter().any(|a| a == "--compact");
+    let mode = if compact {
+        ColorMode::TmuxCompact
+    } else if tmux {
         ColorMode::Tmux
     } else {
         ColorMode::Ansi

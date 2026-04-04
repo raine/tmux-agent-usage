@@ -4,8 +4,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ColorMode {
     Tmux,
+    TmuxCompact,
     Ansi,
 }
+
+// Block elements: 8 levels from empty to full
+const BLOCK_LEVELS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 
 struct Theme {
     dim: &'static str,
@@ -39,9 +43,22 @@ const BRAILLE_LEVELS: &[char] = &['⠀', '⡀', '⡄', '⡆', '⡇', '⣇', '⣧
 
 fn theme(mode: ColorMode) -> &'static Theme {
     match mode {
-        ColorMode::Tmux => &TMUX_THEME,
+        ColorMode::Tmux | ColorMode::TmuxCompact => &TMUX_THEME,
         ColorMode::Ansi => &ANSI_THEME,
     }
+}
+
+fn short_name(provider: ProviderId) -> &'static str {
+    match provider {
+        ProviderId::Codex => "Cdx",
+        ProviderId::Claude => "Cld",
+    }
+}
+
+fn percent_block(pct: u8, t: &Theme) -> String {
+    let idx = (pct as usize * (BLOCK_LEVELS.len() - 1)) / 100;
+    let ch = BLOCK_LEVELS[idx];
+    format!("{}{ch}", percent_color(pct, t))
 }
 
 fn percent_color(pct: u8, t: &Theme) -> &'static str {
@@ -132,6 +149,26 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
     let reset = reset_indicator(s.secondary.as_ref(), t);
 
     match mode {
+        ColorMode::TmuxCompact => {
+            let short = short_name(s.provider);
+            let pri_block = s
+                .primary
+                .as_ref()
+                .and_then(|w| w.used_percent)
+                .map(|p| percent_block(p, t))
+                .unwrap_or_else(|| format!("{}·", t.dim));
+            let sec_block = s
+                .secondary
+                .as_ref()
+                .and_then(|w| w.used_percent)
+                .map(|p| percent_block(p, t))
+                .unwrap_or_else(|| format!("{}·", t.dim));
+            let reset = reset_indicator(s.secondary.as_ref(), t);
+            format!(
+                "{name_color}{short}{pri_block}{sec_block}{reset}{} │ ",
+                t.dim
+            )
+        }
         ColorMode::Tmux => {
             format!(
                 "{name_color}{name} {}{pri_label}:{pri} {}{sec_label}:{sec}{reset}{} │ ",
@@ -167,6 +204,7 @@ pub fn render_unavailable(name: &str) -> String {
 pub fn render_unavailable_with_mode(name: &str, mode: ColorMode) -> String {
     let t = theme(mode);
     match mode {
+        ColorMode::TmuxCompact => format!("{}{} · {}│ ", t.dim, name, t.dim),
         ColorMode::Tmux => format!("{}{}  n/a {}│", t.dim, name, t.dim),
         ColorMode::Ansi => format!("{}{} n/a{}", t.dim, name, t.reset),
     }
