@@ -11,8 +11,10 @@ const TIMEOUT: Duration = Duration::from_secs(3);
 
 #[derive(Deserialize)]
 struct CredentialsFile {
-    #[serde(rename = "claude.ai:oauth")]
+    #[serde(rename = "claudeAiOauth")]
     oauth: Option<OAuthEntry>,
+    #[serde(rename = "claude.ai:oauth")]
+    oauth_legacy: Option<OAuthEntry>,
 }
 
 #[derive(Deserialize)]
@@ -33,7 +35,8 @@ fn load_credentials() -> Result<String> {
     let creds: CredentialsFile = serde_json::from_str(&raw).context("parsing credentials")?;
     let entry = creds
         .oauth
-        .ok_or_else(|| anyhow!("no claude.ai:oauth entry"))?;
+        .or(creds.oauth_legacy)
+        .ok_or_else(|| anyhow!("no claudeAiOauth entry"))?;
 
     let token = entry.access_token.trim().to_string();
     if token.is_empty() {
@@ -172,9 +175,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_credentials_file() {
+    fn parse_credentials_camel_case() {
         let json = r#"{
-            "claude.ai:oauth": {
+            "claudeAiOauth": {
                 "accessToken": "sk-ant-oat-test",
                 "expiresAt": 4102444800000
             }
@@ -186,10 +189,24 @@ mod tests {
     }
 
     #[test]
+    fn parse_credentials_legacy_key() {
+        let json = r#"{
+            "claude.ai:oauth": {
+                "accessToken": "sk-ant-oat-legacy",
+                "expiresAt": 4102444800000
+            }
+        }"#;
+        let creds: CredentialsFile = serde_json::from_str(json).unwrap();
+        let entry = creds.oauth_legacy.unwrap();
+        assert_eq!(entry.access_token, "sk-ant-oat-legacy");
+    }
+
+    #[test]
     fn parse_credentials_missing_oauth() {
         let json = r#"{}"#;
         let creds: CredentialsFile = serde_json::from_str(json).unwrap();
         assert!(creds.oauth.is_none());
+        assert!(creds.oauth_legacy.is_none());
     }
 
     #[test]
