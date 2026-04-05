@@ -161,13 +161,14 @@ fn format_time_remaining(resets_at: i64) -> String {
     let days = remaining / 86400;
     let hours = (remaining % 86400) / 3600;
     let minutes = (remaining % 3600) / 60;
-    if days > 0 {
+    let s = if days > 0 {
         format!("{days}d {hours}h")
     } else if hours > 0 {
         format!("{hours}h {minutes:02}m")
     } else {
         format!("{minutes}m")
-    }
+    };
+    format!("{s:>6}")
 }
 
 pub fn render(snapshot: Option<&Snapshot>) -> String {
