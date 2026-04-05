@@ -244,14 +244,14 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                 .as_ref()
                 .and_then(|w| w.resets_at_unix)
                 .map(|r| format!(" {}↻ {}", t.dim, format_time_remaining(r)))
-                .unwrap_or_default();
+                .unwrap_or_else(|| " ".repeat(9));
 
             let sec_reset = s
                 .secondary
                 .as_ref()
                 .and_then(|w| w.resets_at_unix)
                 .map(|r| format!(" {}↻ {}", t.dim, format_time_remaining(r)))
-                .unwrap_or_default();
+                .unwrap_or_else(|| " ".repeat(9));
 
             format!(
                 "{name_color}{padded_name} {}│ {}{pri_label_long} {pri_a}{pri_spark}{pri_reset} {}│ {}{sec_label_long} {sec_a}{sec_spark}{sec_reset}{}",
