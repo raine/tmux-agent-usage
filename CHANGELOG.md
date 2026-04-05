@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.4 (2026-04-05)
+
+- Reset time columns stay aligned even when a window has no reset time available
+
 ## v0.1.3 (2026-04-04)
 
 - ANSI output now shows reset time for both the 5h and weekly windows
