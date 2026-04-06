@@ -8,6 +8,9 @@ pub trait Provider {
     fn id(&self) -> ProviderId;
     fn display_name(&self) -> &str;
     fn refresh(&self) -> Result<Snapshot>;
+    fn ttl_secs(&self) -> u64 {
+        300
+    }
 }
 
 pub fn registry() -> Vec<Box<dyn Provider>> {

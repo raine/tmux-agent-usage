@@ -2,7 +2,6 @@ use agent_usage::format::ColorMode;
 use agent_usage::{cache, format, model, provider};
 use std::env;
 
-const TTL_SECS: u64 = 55;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -88,7 +87,7 @@ fn get_output(p: &dyn provider::Provider, mode: ColorMode) -> String {
 
     // Fresh cache: return immediately
     if let Some(s) = cached.as_ref() {
-        if cache::is_fresh(s, TTL_SECS) {
+        if cache::is_fresh(s, p.ttl_secs()) {
             return format::render_with_mode(Some(s), mode);
         }
     }
