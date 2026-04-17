@@ -33,14 +33,26 @@ fn load_credentials() -> Result<String> {
     }
 
     // Fall back to credentials file
+    let path = credentials_path()?;
+    let raw =
+        std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    extract_token(&raw)
+}
+
+fn credentials_path() -> Result<std::path::PathBuf> {
+    // Prefer CLAUDE_CONFIG_DIR env var if set and the file exists there
+    if let Ok(dir) = std::env::var("CLAUDE_CONFIG_DIR") {
+        let candidate = std::path::PathBuf::from(dir).join(".credentials.json");
+        if candidate.exists() {
+            return Ok(candidate);
+        }
+    }
+    // Default: ~/.claude/.credentials.json
     let home = directories::BaseDirs::new()
         .ok_or_else(|| anyhow!("no home directory"))?
         .home_dir()
         .to_path_buf();
-    let path = home.join(".claude/.credentials.json");
-    let raw =
-        std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    extract_token(&raw)
+    Ok(home.join(".claude/.credentials.json"))
 }
 
 fn load_from_keychain() -> Result<String> {
