@@ -23,9 +23,15 @@ case "$style" in
     *)       style_flag="--tmux" ;;
 esac
 
-# Build status-right fragments for each provider
+# Build status-right fragments for each provider, separated between providers
 fragments=""
+first=1
 for provider in $providers; do
+    if [ $first -eq 1 ]; then
+        first=0
+    else
+        fragments="${fragments}#[fg=colour245] │ "
+    fi
     fragments="${fragments}#($CURRENT_DIR/bin/status.sh $provider $style_flag)"
 done
 
