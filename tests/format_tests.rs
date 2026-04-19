@@ -30,7 +30,7 @@ fn render_full_codex_snapshot() {
     // No resets_at_unix → no braille indicator
     assert_eq!(
         format::render(Some(&s)),
-        format!("{DIM}Codex {DIM}5h:{YELLOW}72% {DIM}wk:{GREEN}41%{DIM} │ ")
+        format!("{DIM}Codex {DIM}5h:{YELLOW}72% {DIM}wk:{GREEN}41%")
     );
 }
 
@@ -49,7 +49,7 @@ fn render_partial_snapshot() {
     };
     assert_eq!(
         format::render(Some(&s)),
-        format!("{DIM}Codex {DIM}5h:{GREEN}28% {DIM}sec:{DIM}n/a{DIM} │ ")
+        format!("{DIM}Codex {DIM}5h:{GREEN}28% {DIM}sec:{DIM}n/a")
     );
 }
 
@@ -72,7 +72,7 @@ fn render_high_usage_is_red() {
     };
     assert_eq!(
         format::render(Some(&s)),
-        format!("{DIM}Codex {DIM}5h:{RED}95% {DIM}wk:{RED}80%{DIM} │ ")
+        format!("{DIM}Codex {DIM}5h:{RED}95% {DIM}wk:{RED}80%")
     );
 }
 
@@ -85,11 +85,11 @@ fn render_none_snapshot() {
 fn render_unavailable_uses_provider_name() {
     assert_eq!(
         format::render_unavailable("Claude"),
-        format!("{DIM}Claude  n/a {DIM}│")
+        format!("{DIM}Claude  n/a")
     );
     assert_eq!(
         format::render_unavailable("Codex"),
-        format!("{DIM}Codex  n/a {DIM}│")
+        format!("{DIM}Codex  n/a")
     );
 }
 
@@ -112,7 +112,7 @@ fn render_unknown_window_minutes_uses_fallback() {
     };
     assert_eq!(
         format::render(Some(&s)),
-        format!("{DIM}Codex {DIM}pri:{YELLOW}50% {DIM}sec:{GREEN}25%{DIM} │ ")
+        format!("{DIM}Codex {DIM}pri:{YELLOW}50% {DIM}sec:{GREEN}25%")
     );
 }
 
@@ -131,7 +131,7 @@ fn render_claude_provider_has_orange_name() {
     };
     assert_eq!(
         format::render(Some(&s)),
-        format!("{CLAUDE_ORANGE}Claude {DIM}5h:{GREEN}33% {DIM}sec:{DIM}n/a{DIM} │ ")
+        format!("{CLAUDE_ORANGE}Claude {DIM}5h:{GREEN}33% {DIM}sec:{DIM}n/a")
     );
 }
 
