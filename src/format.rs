@@ -210,12 +210,12 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                 .map(|p| percent_spark(p, t))
                 .unwrap_or_else(|| format!("{}·", t.dim));
             let rst = reset_spark(s.secondary.as_ref(), t);
-            format!("{name_color}{short} {pri_spark}{sec_spark}{rst} {}│ ", t.dim)
+            format!("{name_color}{short} {pri_spark}{sec_spark}{rst}")
         }
         ColorMode::Tmux => {
             format!(
-                "{name_color}{name} {}{pri_label}:{pri} {}{sec_label}:{sec}{reset}{} │ ",
-                t.dim, t.dim, t.dim
+                "{name_color}{name} {}{pri_label}:{pri} {}{sec_label}:{sec}{reset}",
+                t.dim, t.dim
             )
         }
         ColorMode::Ansi => {
@@ -269,8 +269,8 @@ pub fn render_unavailable(name: &str) -> String {
 pub fn render_unavailable_with_mode(name: &str, mode: ColorMode) -> String {
     let t = theme(mode);
     match mode {
-        ColorMode::TmuxCompact => format!("{}{} · {}│ ", t.dim, name, t.dim),
-        ColorMode::Tmux => format!("{}{}  n/a {}│", t.dim, name, t.dim),
+        ColorMode::TmuxCompact => format!("{}{} ·", t.dim, name),
+        ColorMode::Tmux => format!("{}{}  n/a", t.dim, name),
         ColorMode::Ansi => format!("{}{:7} │ n/a{}", t.dim, name, t.reset),
     }
 }
