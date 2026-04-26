@@ -132,5 +132,5 @@ cargo run -- claude --debug-probe
   Claude Code conversation history
 - [git-surgeon](https://github.com/raine/git-surgeon) — Surgical,
   non-interactive git hunk control for AI agents
-- [consult-llm-mcp](https://github.com/raine/consult-llm-mcp) — MCP server for
-  consulting powerful reasoning models in Claude Code
+- [consult-llm](https://github.com/raine/consult-llm) — Consult other AI models
+  from your agent workflow
