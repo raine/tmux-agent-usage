@@ -18,6 +18,7 @@ pub fn path_for(provider: ProviderId) -> PathBuf {
     let name = match provider {
         ProviderId::Codex => "codex",
         ProviderId::Claude => "claude",
+        ProviderId::Zai => "zai",
     };
     cache_dir().join(format!("{name}.json"))
 }

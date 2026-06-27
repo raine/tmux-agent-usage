@@ -1,5 +1,6 @@
 pub mod claude;
 pub mod codex;
+pub mod zai;
 
 use crate::model::{ProviderId, Snapshot};
 use anyhow::Result;
@@ -17,6 +18,7 @@ pub fn registry() -> Vec<Box<dyn Provider>> {
     vec![
         Box::new(codex::CodexProvider::new()),
         Box::new(claude::ClaudeProvider::new()),
+        Box::new(zai::ZaiProvider::new()),
     ]
 }
 
@@ -28,6 +30,7 @@ pub fn parse_provider_arg(arg: &str) -> Option<ProviderId> {
     match arg.to_lowercase().as_str() {
         "codex" => Some(ProviderId::Codex),
         "claude" => Some(ProviderId::Claude),
+        "zai" | "z.ai" => Some(ProviderId::Zai),
         _ => None,
     }
 }

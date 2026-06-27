@@ -2,7 +2,6 @@ use agent_usage::format::ColorMode;
 use agent_usage::{cache, format, model, provider};
 use std::env;
 
-
 fn main() {
     let args: Vec<String> = env::args().collect();
 

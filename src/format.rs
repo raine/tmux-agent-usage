@@ -52,6 +52,7 @@ fn short_name(provider: ProviderId) -> &'static str {
     match provider {
         ProviderId::Codex => "O",
         ProviderId::Claude => "C",
+        ProviderId::Zai => "Z",
     }
 }
 
@@ -210,7 +211,10 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                 .map(|p| percent_spark(p, t))
                 .unwrap_or_else(|| format!("{}·", t.dim));
             let rst = reset_spark(s.secondary.as_ref(), t);
-            format!("{name_color}{short} {pri_spark}{sec_spark}{rst} {}│ ", t.dim)
+            format!(
+                "{name_color}{short} {pri_spark}{sec_spark}{rst} {}│ ",
+                t.dim
+            )
         }
         ColorMode::Tmux => {
             format!(
@@ -220,10 +224,13 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
         }
         ColorMode::Ansi => {
             let padded_name = format!("{name:7}");
-            let pri_label_long = window_label_long(s.primary.as_ref().and_then(|w| w.window_minutes), "pri");
-            let sec_label_long = window_label_long(s.secondary.as_ref().and_then(|w| w.window_minutes), "sec");
+            let pri_label_long =
+                window_label_long(s.primary.as_ref().and_then(|w| w.window_minutes), "pri");
+            let sec_label_long =
+                window_label_long(s.secondary.as_ref().and_then(|w| w.window_minutes), "sec");
             let pri_a = render_percent_aligned(s.primary.as_ref().and_then(|w| w.used_percent), t);
-            let sec_a = render_percent_aligned(s.secondary.as_ref().and_then(|w| w.used_percent), t);
+            let sec_a =
+                render_percent_aligned(s.secondary.as_ref().and_then(|w| w.used_percent), t);
 
             let pri_spark = s
                 .primary

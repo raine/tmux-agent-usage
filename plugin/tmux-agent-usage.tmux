@@ -11,7 +11,7 @@ if ! command -v agent-usage >/dev/null 2>&1; then
     fi
 fi
 
-# Configurable providers: set -g @agent-usage-providers "codex claude"
+# Configurable providers: set -g @agent-usage-providers "codex claude zai"
 # Defaults to "codex" if not set.
 providers="$(tmux show-option -gqv @agent-usage-providers)"
 providers="${providers:-codex}"

@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 pub enum ProviderId {
     Codex,
     Claude,
+    Zai,
 }
 
 impl ProviderId {
@@ -12,6 +13,7 @@ impl ProviderId {
         match self {
             ProviderId::Codex => "Codex",
             ProviderId::Claude => "Claude",
+            ProviderId::Zai => "z.ai",
         }
     }
 }
