@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.5 (2026-06-27)
+
+- Add z.ai usage support, including 5h and weekly quota windows.
+- Respect `CLAUDE_CONFIG_DIR` when reading Claude credentials from a credentials file. ([#1](https://github.com/raine/tmux-agent-usage/pull/1))
+- Keep tmux provider separators between providers, with spacing before existing status content. ([#2](https://github.com/raine/tmux-agent-usage/pull/2))
+- Reduce repeated refresh attempts when a stale cached provider fails to update.
+- Make cached usage data last up to 5 minutes for smoother status refreshes.
+- Bound Codex status probing so tmux refreshes stay responsive.
+
 ## v0.1.4 (2026-04-05)
 
 - Reset time columns stay aligned even when a window has no reset time available
