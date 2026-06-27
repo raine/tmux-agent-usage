@@ -136,18 +136,17 @@ fn render_claude_provider_has_orange_name() {
 }
 
 #[test]
-fn render_with_reset_indicator() {
+fn render_shows_reset_indicator_for_both_windows() {
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs() as i64;
-    // Reset in ~3.5 days (half of 7-day window) → should be middle braille
     let s = Snapshot {
         provider: ProviderId::Codex,
         primary: Some(Window {
             used_percent: Some(10),
             window_minutes: Some(300),
-            resets_at_unix: None,
+            resets_at_unix: Some(now + 150 * 60),
         }),
         secondary: Some(Window {
             used_percent: Some(50),
@@ -158,6 +157,33 @@ fn render_with_reset_indicator() {
         observed_at_unix: now,
     };
     let rendered = format::render(Some(&s));
-    // Should contain a braille character (not empty braille ⠀)
-    assert!(rendered.contains('⡇') || rendered.contains('⡆') || rendered.contains('⣇'));
+    assert_eq!(
+        rendered,
+        format!("{DIM}Codex {DIM}5h:{GREEN}10% {DIM}⡇ {DIM}wk:{YELLOW}50% {DIM}⡇")
+    );
+}
+
+#[test]
+fn render_compact_shows_reset_spark_for_both_windows() {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as i64;
+    let s = Snapshot {
+        provider: ProviderId::Codex,
+        primary: Some(Window {
+            used_percent: Some(10),
+            window_minutes: Some(300),
+            resets_at_unix: Some(now + 150 * 60),
+        }),
+        secondary: Some(Window {
+            used_percent: Some(50),
+            window_minutes: Some(10080),
+            resets_at_unix: Some(now + 3 * 86400 + 43200),
+        }),
+        credits: None,
+        observed_at_unix: now,
+    };
+    let rendered = format::render_with_mode(Some(&s), format::ColorMode::TmuxCompact);
+    assert_eq!(rendered, format!("{DIM}O {GREEN}▁{DIM}▅{YELLOW}▄{DIM}▅"));
 }

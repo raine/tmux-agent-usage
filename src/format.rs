@@ -193,7 +193,8 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
 
     let pri = render_percent(s.primary.as_ref().and_then(|w| w.used_percent), t);
     let sec = render_percent(s.secondary.as_ref().and_then(|w| w.used_percent), t);
-    let reset = reset_indicator(s.secondary.as_ref(), t);
+    let pri_reset = reset_indicator(s.primary.as_ref(), t);
+    let sec_reset = reset_indicator(s.secondary.as_ref(), t);
 
     match mode {
         ColorMode::TmuxCompact => {
@@ -210,12 +211,13 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                 .and_then(|w| w.used_percent)
                 .map(|p| percent_spark(p, t))
                 .unwrap_or_else(|| format!("{}·", t.dim));
-            let rst = reset_spark(s.secondary.as_ref(), t);
-            format!("{name_color}{short} {pri_spark}{sec_spark}{rst}")
+            let pri_rst = reset_spark(s.primary.as_ref(), t);
+            let sec_rst = reset_spark(s.secondary.as_ref(), t);
+            format!("{name_color}{short} {pri_spark}{pri_rst}{sec_spark}{sec_rst}")
         }
         ColorMode::Tmux => {
             format!(
-                "{name_color}{name} {}{pri_label}:{pri} {}{sec_label}:{sec}{reset}",
+                "{name_color}{name} {}{pri_label}:{pri}{pri_reset} {}{sec_label}:{sec}{sec_reset}",
                 t.dim, t.dim
             )
         }
