@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.6 (2026-06-27)
+
+- Show reset progress indicators for both 5h and weekly windows in tmux output.
+
 ## v0.1.5 (2026-06-27)
 
 - Add z.ai usage support, including 5h and weekly quota windows.
