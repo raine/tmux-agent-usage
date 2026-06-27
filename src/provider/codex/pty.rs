@@ -3,7 +3,8 @@ use crate::model::{Credits, ProviderId, Snapshot, Window};
 use anyhow::{anyhow, bail, Result};
 use portable_pty::{CommandBuilder, NativePtySystem, PtySize, PtySystem};
 use std::io::{Read, Write};
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::sync::mpsc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const PTY_TIMEOUT: Duration = Duration::from_secs(5);
 const PTY_RETRY_TIMEOUT: Duration = Duration::from_secs(4);
@@ -31,40 +32,39 @@ fn run_pty_probe(rows: u16, cols: u16, timeout: Duration) -> Result<Snapshot> {
     })?;
 
     let cmd = CommandBuilder::new(&bin);
-    let _child = pair.slave.spawn_command(cmd)?;
+    let mut child = pair.slave.spawn_command(cmd)?;
     drop(pair.slave);
 
     let mut writer = pair.master.take_writer()?;
     let mut reader = pair.master.try_clone_reader()?;
 
-    // Wait briefly for prompt, then send /status
     std::thread::sleep(Duration::from_millis(500));
     writeln!(writer, "/status")?;
 
-    // Read with timeout
-    let mut output = String::new();
-    let mut buf = [0u8; 4096];
-    let deadline = Instant::now() + timeout;
-
-    loop {
-        let remaining = deadline.saturating_duration_since(Instant::now());
-        if remaining.is_zero() {
-            break;
-        }
-        match reader.read(&mut buf) {
-            Ok(0) => break,
-            Ok(n) => {
-                output.push_str(&String::from_utf8_lossy(&buf[..n]));
-                if output.to_lowercase().contains("weekly limit") {
-                    break;
+    let (tx, rx) = mpsc::channel();
+    let reader_handle = std::thread::spawn(move || {
+        let mut output = String::new();
+        let mut buf = [0u8; 4096];
+        loop {
+            match reader.read(&mut buf) {
+                Ok(0) => break,
+                Ok(n) => {
+                    output.push_str(&String::from_utf8_lossy(&buf[..n]));
+                    if output.to_lowercase().contains("weekly limit") {
+                        break;
+                    }
                 }
+                Err(_) => break,
             }
-            Err(_) => break,
         }
-    }
+        let _ = tx.send(output);
+    });
 
+    let output = rx.recv_timeout(timeout).unwrap_or_default();
+    let _ = child.kill();
     drop(writer);
-    drop(reader);
+    let _ = reader_handle.join();
+    let _ = child.wait();
 
     let clean = strip_ansi(&output);
     parse_status_output(&clean)
