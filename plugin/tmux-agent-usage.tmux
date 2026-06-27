@@ -35,8 +35,11 @@ for provider in $providers; do
     fragments="${fragments}#($CURRENT_DIR/bin/status.sh $provider $style_flag)"
 done
 
-# Prepend agent usage before existing status-right content (e.g. clock)
+# Compose agent usage before existing status-right content.
 current="$(tmux show-option -gqv status-right)"
+if [ -n "$current" ]; then
+    fragments="${fragments} "
+fi
 tmux set-option -g status-right "${fragments}${current}"
 
 # Ensure status-right-length is wide enough
