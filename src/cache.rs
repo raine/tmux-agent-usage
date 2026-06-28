@@ -41,6 +41,22 @@ pub fn try_lock(lock_path: &Path) -> Option<fs::File> {
     Some(file)
 }
 
+pub fn lock_is_recent(lock_path: &Path, ttl_secs: u64) -> bool {
+    let Ok(modified) = fs::metadata(lock_path).and_then(|m| m.modified()) else {
+        return false;
+    };
+    let Ok(modified) = modified.duration_since(UNIX_EPOCH) else {
+        return false;
+    };
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let modified = modified.as_secs();
+
+    modified > now || now.saturating_sub(modified) <= ttl_secs
+}
+
 pub fn load(path: &Path) -> Option<Snapshot> {
     let raw = fs::read_to_string(path).ok()?;
     match serde_json::from_str::<Snapshot>(&raw) {

@@ -94,19 +94,10 @@ fn get_output(p: &dyn provider::Provider, mode: ColorMode) -> String {
     // Stale cache: use it, try refresh
     if let Some(s) = cached.as_ref() {
         let output = format::render_with_mode(Some(s), mode);
-        if let Some(_lock_file) = cache::try_lock(&lock) {
-            match p.refresh() {
-                Ok(snapshot) => {
+        if !cache::lock_is_recent(&lock, p.ttl_secs()) {
+            if let Some(_lock_file) = cache::try_lock(&lock) {
+                if let Ok(snapshot) = p.refresh() {
                     let _ = cache::save(&path, &snapshot);
-                }
-                Err(_) => {
-                    // Touch timestamp so we don't retry every call
-                    let mut touched = s.clone();
-                    touched.observed_at_unix = std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs() as i64;
-                    let _ = cache::save(&path, &touched);
                 }
             }
         }
