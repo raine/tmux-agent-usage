@@ -60,11 +60,18 @@ fn run_pty_probe(rows: u16, cols: u16, timeout: Duration) -> Result<Snapshot> {
         let _ = tx.send(output);
     });
 
-    let output = rx.recv_timeout(timeout).unwrap_or_default();
+    let output = match rx.recv_timeout(timeout) {
+        Ok(output) => {
+            let _ = reader_handle.join();
+            output
+        }
+        Err(_) => String::new(),
+    };
+
     let _ = child.kill();
     drop(writer);
-    let _ = reader_handle.join();
-    let _ = child.wait();
+    drop(pair.master);
+    let _ = child.try_wait();
 
     let clean = strip_ansi(&output);
     parse_status_output(&clean)
