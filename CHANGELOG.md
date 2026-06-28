@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.7 (2026-06-28)
+
+- Keep stale usage data visible when a provider refresh fails, so status output continues to show the last known values.
+- Keep Codex status refreshes responsive when probe output times out.
+
 ## v0.1.6 (2026-06-27)
 
 - Show reset progress indicators for both 5h and weekly windows in tmux output.
