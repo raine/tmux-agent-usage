@@ -53,6 +53,7 @@ fn short_name(provider: ProviderId) -> &'static str {
         ProviderId::Codex => "O",
         ProviderId::Claude => "C",
         ProviderId::Zai => "Z",
+        ProviderId::Grok => "G",
     }
 }
 
@@ -199,6 +200,16 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
     match mode {
         ColorMode::TmuxCompact => {
             let short = short_name(s.provider);
+            if s.primary.is_none() && s.secondary.is_some() {
+                let sec_spark = s
+                    .secondary
+                    .as_ref()
+                    .and_then(|w| w.used_percent)
+                    .map(|p| percent_spark(p, t))
+                    .unwrap_or_else(|| format!("{}·", t.dim));
+                let sec_rst = reset_spark(s.secondary.as_ref(), t);
+                return format!("{name_color}{short} {sec_spark}{sec_rst}");
+            }
             let pri_spark = s
                 .primary
                 .as_ref()
@@ -216,6 +227,9 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
             format!("{name_color}{short} {pri_spark}{pri_rst}{sec_spark}{sec_rst}")
         }
         ColorMode::Tmux => {
+            if s.primary.is_none() && s.secondary.is_some() {
+                return format!("{name_color}{name} {}{sec_label}:{sec}{sec_reset}", t.dim);
+            }
             format!(
                 "{name_color}{name} {}{pri_label}:{pri}{pri_reset} {}{sec_label}:{sec}{sec_reset}",
                 t.dim, t.dim
@@ -223,6 +237,28 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
         }
         ColorMode::Ansi => {
             let padded_name = format!("{name:7}");
+            if s.primary.is_none() && s.secondary.is_some() {
+                let sec_label_long =
+                    window_label_long(s.secondary.as_ref().and_then(|w| w.window_minutes), "sec");
+                let sec_a =
+                    render_percent_aligned(s.secondary.as_ref().and_then(|w| w.used_percent), t);
+                let sec_spark = s
+                    .secondary
+                    .as_ref()
+                    .and_then(|w| w.used_percent)
+                    .map(|p| format!(" {}", percent_spark(p, t)))
+                    .unwrap_or_default();
+                let sec_reset = s
+                    .secondary
+                    .as_ref()
+                    .and_then(|w| w.resets_at_unix)
+                    .map(|r| format!(" {}↻ {}", t.dim, format_time_remaining(r)))
+                    .unwrap_or_else(|| " ".repeat(9));
+                return format!(
+                    "{name_color}{padded_name} {}│ {}{sec_label_long} {sec_a}{sec_spark}{sec_reset}{}",
+                    t.dim, t.dim, t.reset
+                );
+            }
             let pri_label_long =
                 window_label_long(s.primary.as_ref().and_then(|w| w.window_minutes), "pri");
             let sec_label_long =

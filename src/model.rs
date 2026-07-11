@@ -6,6 +6,7 @@ pub enum ProviderId {
     Codex,
     Claude,
     Zai,
+    Grok,
 }
 
 impl ProviderId {
@@ -14,6 +15,7 @@ impl ProviderId {
             ProviderId::Codex => "Codex",
             ProviderId::Claude => "Claude",
             ProviderId::Zai => "z.ai",
+            ProviderId::Grok => "Grok",
         }
     }
 }

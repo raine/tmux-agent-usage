@@ -1,8 +1,8 @@
 # tmux-agent-usage
 
 Display AI agent rate limit usage in your tmux status bar. Shows session and
-weekly utilization for Codex, Claude, and z.ai with color-coded percentages and
-a braille reset indicator.
+weekly utilization for Codex, Claude, z.ai, and Grok with color-coded percentages
+and a braille reset indicator.
 
 <img src="meta/screenshot.png" alt="agent-usage tmux status bar" width="500" />
 
@@ -42,7 +42,7 @@ Add to `~/.tmux.conf`:
 
 ```tmux
 # Configure which providers to show (default: codex)
-set -g @agent-usage-providers "codex claude zai"
+set -g @agent-usage-providers "codex claude zai grok"
 
 set -g @plugin 'raine/tmux-agent-usage'
 ```
@@ -53,7 +53,7 @@ The plugin auto-installs the binary if not found in PATH.
 
 ```tmux
 set -g status-right-length 120
-set -g status-right '#(agent-usage codex)#(agent-usage claude)#(agent-usage zai)#[fg=green]%d.%m. %H:%M'
+set -g status-right '#(agent-usage codex)#(agent-usage claude)#(agent-usage zai)#(agent-usage grok)#[fg=green]%d.%m. %H:%M'
 ```
 
 Then reload: `tmux source ~/.tmux.conf`
@@ -79,6 +79,12 @@ Queries `api.z.ai/api/monitor/usage/quota/limit` with a Bearer token from
 `ZAI_API_TOKEN`. Also accepts `Z_AI_API_KEY`, `ZHIPUAI_API_KEY`, or
 `GLM_API_KEY`. Shows the 5h and weekly quota windows.
 
+### Grok
+
+Reads OAuth credentials from `~/.grok/auth.json` and queries the
+`cli-chat-proxy.grok.com/v1/billing?format=credits` endpoint. Requires being
+logged into Grok.
+
 ## Usage
 
 ```bash
@@ -89,11 +95,13 @@ agent-usage
 agent-usage codex
 agent-usage claude
 agent-usage zai
+agent-usage grok
 
 # Debug mode (prints raw JSON snapshot, bypasses cache)
 agent-usage --debug-probe
 agent-usage claude --debug-probe
 agent-usage zai --debug-probe
+agent-usage grok --debug-probe
 ```
 
 ## How it works
@@ -129,6 +137,7 @@ just install-dev
 cargo run -- codex
 cargo run -- claude --debug-probe
 cargo run -- zai --debug-probe
+cargo run -- grok --debug-probe
 ```
 
 ## Related projects

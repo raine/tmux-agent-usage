@@ -19,6 +19,7 @@ pub fn path_for(provider: ProviderId) -> PathBuf {
         ProviderId::Codex => "codex",
         ProviderId::Claude => "claude",
         ProviderId::Zai => "zai",
+        ProviderId::Grok => "grok",
     };
     cache_dir().join(format!("{name}.json"))
 }

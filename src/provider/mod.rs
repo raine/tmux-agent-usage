@@ -1,5 +1,6 @@
 pub mod claude;
 pub mod codex;
+pub mod grok;
 pub mod zai;
 
 use crate::model::{ProviderId, Snapshot};
@@ -19,6 +20,7 @@ pub fn registry() -> Vec<Box<dyn Provider>> {
         Box::new(codex::CodexProvider::new()),
         Box::new(claude::ClaudeProvider::new()),
         Box::new(zai::ZaiProvider::new()),
+        Box::new(grok::GrokProvider::new()),
     ]
 }
 
@@ -31,6 +33,7 @@ pub fn parse_provider_arg(arg: &str) -> Option<ProviderId> {
         "codex" => Some(ProviderId::Codex),
         "claude" => Some(ProviderId::Claude),
         "zai" | "z.ai" => Some(ProviderId::Zai),
+        "grok" | "grog" => Some(ProviderId::Grok),
         _ => None,
     }
 }

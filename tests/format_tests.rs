@@ -77,8 +77,41 @@ fn render_high_usage_is_red() {
 }
 
 #[test]
-fn render_none_snapshot() {
-    assert_eq!(format::render(None), format!("{DIM}n/a"));
+fn render_grok_weekly_snapshot() {
+    let s = Snapshot {
+        provider: ProviderId::Grok,
+        primary: None,
+        secondary: Some(Window {
+            used_percent: Some(1),
+            window_minutes: Some(10080),
+            resets_at_unix: None,
+        }),
+        credits: None,
+        observed_at_unix: 0,
+    };
+    assert_eq!(
+        format::render(Some(&s)),
+        format!("{DIM}Grok {DIM}wk:{GREEN}1%")
+    );
+}
+
+#[test]
+fn render_grok_compact_snapshot() {
+    let s = Snapshot {
+        provider: ProviderId::Grok,
+        primary: None,
+        secondary: Some(Window {
+            used_percent: Some(1),
+            window_minutes: Some(10080),
+            resets_at_unix: None,
+        }),
+        credits: None,
+        observed_at_unix: 0,
+    };
+    assert_eq!(
+        format::render_with_mode(Some(&s), format::ColorMode::TmuxCompact),
+        format!("{DIM}G {GREEN}▁{DIM}▁")
+    );
 }
 
 #[test]
