@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.8 (2026-07-11)
+
+- Add Grok support
+
 ## v0.1.7 (2026-06-28)
 
 - Keep stale usage data visible when a provider refresh fails, so status output continues to show the last known values.
