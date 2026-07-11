@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-exec git-format-staged
+exec checkle pre-commit

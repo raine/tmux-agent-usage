@@ -7,9 +7,9 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 default:
     @just --list
 
-# Run all checks
-[parallel]
-check: format clippy-fix build test clippy
+# Run project checks through checkle
+check:
+    checkle run all
 
 # Run check and fail if there are uncommitted changes (for CI)
 check-ci: check
@@ -22,25 +22,25 @@ check-ci: check
         exit 1
     fi
 
-# Format Rust files
+# Install shims into the Git hooks directory
+install-hooks:
+    scripts/install-git-hook-shims
+
+# Check Rust formatting through checkle
 format:
-    cargo fmt --all
+    checkle run format-check
 
-# Run clippy and fail on any warnings
+# Check clippy through checkle
 clippy:
-    cargo clippy -- -D clippy::all
+    checkle run clippy
 
-# Auto-fix clippy warnings
-clippy-fix:
-    cargo clippy --fix --allow-dirty -- -W clippy::all
-
-# Build the project
+# Check the build through checkle
 build:
-    cargo build --all
+    checkle run build
 
-# Run tests
+# Run tests through checkle
 test:
-    cargo test
+    checkle run test
 
 # Install release binary globally
 install:
