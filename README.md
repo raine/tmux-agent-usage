@@ -11,8 +11,8 @@ Compact mode (`--compact`):
 <img src="meta/screenshot-compact.png" alt="agent-usage compact mode" width="300" />
 
 - **Green** < 50%, **yellow** 50–79%, **red** 80%+
-- Three spark bars per provider: 5h usage, weekly usage, time until reset
-- Cache-first with 55s TTL — tmux refreshes stay instant
+- Compact mode shows each provider's available usage windows with reset indicators
+- Cache-first with 55s TTL - tmux refreshes stay instant
 
 ## Install
 
