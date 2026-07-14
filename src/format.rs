@@ -200,7 +200,7 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
     match mode {
         ColorMode::TmuxCompact => {
             let short = short_name(s.provider);
-            if s.primary.is_none() && s.secondary.is_some() {
+            if s.provider == ProviderId::Grok {
                 let sec_spark = s
                     .secondary
                     .as_ref()
@@ -210,20 +210,28 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                 let sec_rst = reset_spark(s.secondary.as_ref(), t);
                 return format!("{name_color}{short} {sec_spark}{sec_rst}");
             }
-            let pri_spark = s
-                .primary
-                .as_ref()
+
+            let windows = [s.primary.as_ref(), s.secondary.as_ref()];
+            let pri_window = windows
+                .iter()
+                .flatten()
+                .find(|w| w.window_minutes == Some(300))
+                .copied();
+            let sec_window = windows
+                .iter()
+                .flatten()
+                .find(|w| w.window_minutes == Some(10080))
+                .copied();
+            let pri_spark = pri_window
                 .and_then(|w| w.used_percent)
                 .map(|p| percent_spark(p, t))
                 .unwrap_or_else(|| format!("{}·", t.dim));
-            let sec_spark = s
-                .secondary
-                .as_ref()
+            let sec_spark = sec_window
                 .and_then(|w| w.used_percent)
                 .map(|p| percent_spark(p, t))
                 .unwrap_or_else(|| format!("{}·", t.dim));
-            let pri_rst = reset_spark(s.primary.as_ref(), t);
-            let sec_rst = reset_spark(s.secondary.as_ref(), t);
+            let pri_rst = reset_spark(pri_window, t);
+            let sec_rst = reset_spark(sec_window, t);
             format!("{name_color}{short} {pri_spark}{pri_rst}{sec_spark}{sec_rst}")
         }
         ColorMode::Tmux => {

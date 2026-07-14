@@ -197,6 +197,29 @@ fn render_shows_reset_indicator_for_both_windows() {
 }
 
 #[test]
+fn render_compact_places_weekly_primary_in_weekly_slot() {
+    let s = Snapshot {
+        provider: ProviderId::Codex,
+        primary: Some(Window {
+            used_percent: Some(51),
+            window_minutes: Some(10080),
+            resets_at_unix: None,
+        }),
+        secondary: Some(Window {
+            used_percent: None,
+            window_minutes: None,
+            resets_at_unix: None,
+        }),
+        credits: None,
+        observed_at_unix: 0,
+    };
+    assert_eq!(
+        format::render_with_mode(Some(&s), format::ColorMode::TmuxCompact),
+        format!("{DIM}O {DIM}▁▁{YELLOW}▄{DIM}▁")
+    );
+}
+
+#[test]
 fn render_compact_shows_reset_spark_for_both_windows() {
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
