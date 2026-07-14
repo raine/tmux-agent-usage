@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.9 (2026-07-14)
+
+- Show weekly-only Codex usage in the weekly compact-mode slot instead of the 5h slot.
+
 ## v0.1.8 (2026-07-11)
 
 - Add Grok support
