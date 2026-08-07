@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.10 (2026-08-07)
+
+- Show separately metered weekly usage limits for each Claude model. ([#3](https://github.com/raine/tmux-agent-usage/pull/3))
+
 ## v0.1.9 (2026-07-14)
 
 - Show weekly-only Codex usage in the weekly compact-mode slot instead of the 5h slot.
