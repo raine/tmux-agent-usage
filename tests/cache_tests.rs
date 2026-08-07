@@ -15,6 +15,7 @@ fn minimal_snapshot(observed_at: i64) -> Snapshot {
         primary: None,
         secondary: None,
         credits: None,
+        scoped: Vec::new(),
         observed_at_unix: observed_at,
     }
 }
@@ -66,4 +67,21 @@ fn load_corrupt_file_returns_none() {
     let path = dir.path().join("corrupt.json");
     std::fs::write(&path, "not json").unwrap();
     assert!(cache::load(&path).is_none());
+}
+
+#[test]
+fn reads_cache_written_before_scoped_field_existed() {
+    // Upgrade path: caches on disk predate `scoped`. Without #[serde(default)]
+    // every user's first run after upgrading would fail to deserialize and
+    // silently re-probe.
+    let json = r#"{
+        "provider": "claude",
+        "primary": {"used_percent": 26, "window_minutes": 300, "resets_at_unix": null},
+        "secondary": {"used_percent": 25, "window_minutes": 10080, "resets_at_unix": null},
+        "credits": null,
+        "observed_at_unix": 1786000000
+    }"#;
+    let snapshot: Snapshot = serde_json::from_str(json).unwrap();
+    assert_eq!(snapshot.provider, ProviderId::Claude);
+    assert!(snapshot.scoped.is_empty());
 }

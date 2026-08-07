@@ -1,4 +1,4 @@
-use crate::model::{ProviderId, Snapshot, Window};
+use crate::model::{ProviderId, ScopedWindow, Snapshot, Window};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -232,14 +232,32 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                 .unwrap_or_else(|| format!("{}·", t.dim));
             let pri_rst = reset_spark(pri_window, t);
             let sec_rst = reset_spark(sec_window, t);
-            format!("{name_color}{short} {pri_spark}{pri_rst}{sec_spark}{sec_rst}")
+            // Scoped windows get a spark pair each, with no label — compact
+            // mode is glyph-only by design, and their order is the API's.
+            let scoped: String = s
+                .scoped
+                .iter()
+                .map(|sw| {
+                    let spark = sw
+                        .window
+                        .used_percent
+                        .map(|p| percent_spark(p, t))
+                        .unwrap_or_else(|| format!("{}·", t.dim));
+                    format!("{spark}{}", reset_spark(Some(&sw.window), t))
+                })
+                .collect();
+            format!("{name_color}{short} {pri_spark}{pri_rst}{sec_spark}{sec_rst}{scoped}")
         }
         ColorMode::Tmux => {
+            let scoped = render_scoped_tmux(&s.scoped, t);
             if s.primary.is_none() && s.secondary.is_some() {
-                return format!("{name_color}{name} {}{sec_label}:{sec}{sec_reset}", t.dim);
+                return format!(
+                    "{name_color}{name} {}{sec_label}:{sec}{sec_reset}{scoped}",
+                    t.dim
+                );
             }
             format!(
-                "{name_color}{name} {}{pri_label}:{pri}{pri_reset} {}{sec_label}:{sec}{sec_reset}",
+                "{name_color}{name} {}{pri_label}:{pri}{pri_reset} {}{sec_label}:{sec}{sec_reset}{scoped}",
                 t.dim, t.dim
             )
         }
@@ -303,12 +321,54 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                 .map(|r| format!(" {}↻ {}", t.dim, format_time_remaining(r)))
                 .unwrap_or_else(|| " ".repeat(9));
 
+            let scoped = render_scoped_ansi(&s.scoped, t);
             format!(
-                "{name_color}{padded_name} {}│ {}{pri_label_long} {pri_a}{pri_spark}{pri_reset} {}│ {}{sec_label_long} {sec_a}{sec_spark}{sec_reset}{}",
+                "{name_color}{padded_name} {}│ {}{pri_label_long} {pri_a}{pri_spark}{pri_reset} {}│ {}{sec_label_long} {sec_a}{sec_spark}{sec_reset}{scoped}{}",
                 t.dim, t.dim, t.dim, t.dim, t.reset
             )
         }
     }
+}
+
+/// Scoped windows for the tmux status line: ` Fable:27% ⣧` per entry.
+///
+/// The scope label replaces the window label — a per-model weekly limit is
+/// identified by its model, and repeating "wk" for each would be noise.
+fn render_scoped_tmux(scoped: &[ScopedWindow], t: &Theme) -> String {
+    scoped
+        .iter()
+        .map(|sw| {
+            format!(
+                " {}{}:{}{}",
+                t.dim,
+                sw.label,
+                render_percent(sw.window.used_percent, t),
+                reset_indicator(Some(&sw.window), t)
+            )
+        })
+        .collect()
+}
+
+/// Scoped windows for the wide ANSI line, matching the column layout of the
+/// primary and secondary windows.
+fn render_scoped_ansi(scoped: &[ScopedWindow], t: &Theme) -> String {
+    scoped
+        .iter()
+        .map(|sw| {
+            let pct = render_percent_aligned(sw.window.used_percent, t);
+            let spark = sw
+                .window
+                .used_percent
+                .map(|p| format!(" {}", percent_spark(p, t)))
+                .unwrap_or_default();
+            let reset = sw
+                .window
+                .resets_at_unix
+                .map(|r| format!(" {}↻ {}", t.dim, format_time_remaining(r)))
+                .unwrap_or_else(|| " ".repeat(9));
+            format!(" {}│ {}{:4} {pct}{spark}{reset}", t.dim, t.dim, sw.label)
+        })
+        .collect()
 }
 
 /// Render a failure line for a specific provider.

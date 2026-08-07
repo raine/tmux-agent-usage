@@ -40,6 +40,7 @@ fn snapshot_from_rpc_result(result: &serde_json::Value) -> Snapshot {
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false),
         }),
+        scoped: Vec::new(),
         observed_at_unix: now,
     }
 }

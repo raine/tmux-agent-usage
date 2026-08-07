@@ -1,4 +1,4 @@
-use crate::model::{Credits, ProviderId, Snapshot, Window};
+use crate::model::{Credits, ProviderId, ScopedWindow, Snapshot, Window};
 use anyhow::{anyhow, bail, Context, Result};
 use serde::Deserialize;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -108,12 +108,36 @@ struct UsageResponse {
     five_hour: Option<UsageWindow>,
     seven_day: Option<UsageWindow>,
     extra_usage: Option<ExtraUsage>,
+    #[serde(default)]
+    limits: Vec<LimitEntry>,
 }
 
 #[derive(Deserialize)]
 struct UsageWindow {
     utilization: Option<f64>,
     resets_at: Option<String>,
+}
+
+/// One entry of the API's `limits` array. This is where per-model weekly
+/// counters now live: the dedicated `seven_day_opus` / `seven_day_sonnet`
+/// fields still exist in the payload but are null, so reading them is no
+/// longer enough to see a model-scoped limit.
+#[derive(Deserialize)]
+struct LimitEntry {
+    kind: Option<String>,
+    percent: Option<f64>,
+    resets_at: Option<String>,
+    scope: Option<LimitScope>,
+}
+
+#[derive(Deserialize)]
+struct LimitScope {
+    model: Option<LimitModel>,
+}
+
+#[derive(Deserialize)]
+struct LimitModel {
+    display_name: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -153,8 +177,32 @@ pub fn probe() -> Result<Snapshot> {
         primary: resp.five_hour.map(|w| to_window(w, 300)),
         secondary: resp.seven_day.map(|w| to_window(w, 10080)),
         credits: resp.extra_usage.and_then(to_credits),
+        scoped: to_scoped(resp.limits),
         observed_at_unix: now,
     })
+}
+
+/// Pull per-model weekly limits out of the `limits` array.
+///
+/// Only `weekly_scoped` entries are taken: `session` and `weekly_all` restate
+/// the `five_hour` and `seven_day` windows already mapped above, so including
+/// them would render each figure twice.
+fn to_scoped(limits: Vec<LimitEntry>) -> Vec<ScopedWindow> {
+    limits
+        .into_iter()
+        .filter(|l| l.kind.as_deref() == Some("weekly_scoped"))
+        .filter_map(|l| {
+            let label = l.scope?.model?.display_name?;
+            Some(ScopedWindow {
+                window: Window {
+                    used_percent: l.percent.map(|p| p.round().clamp(0.0, 100.0) as u8),
+                    window_minutes: Some(10080),
+                    resets_at_unix: l.resets_at.as_deref().and_then(parse_iso8601),
+                },
+                label,
+            })
+        })
+        .collect()
 }
 
 fn to_window(w: UsageWindow, window_minutes: u16) -> Window {
@@ -296,5 +344,67 @@ mod tests {
     #[test]
     fn parse_iso8601_fractional() {
         assert_eq!(parse_iso8601("2026-01-01T00:00:00.000Z"), Some(1767225600));
+    }
+
+    #[test]
+    fn scoped_limits_extracted_from_limits_array() {
+        // Trimmed shape of a real response: the plan-wide counters are
+        // repeated in `limits` as session/weekly_all, and the per-model one
+        // arrives as weekly_scoped.
+        let json = r#"{
+            "five_hour": {"utilization": 26.0, "resets_at": "2026-08-07T17:20:00.489883+00:00"},
+            "seven_day": {"utilization": 25.0, "resets_at": "2026-08-13T02:00:00.489908+00:00"},
+            "seven_day_opus": null,
+            "limits": [
+                {"kind": "session", "percent": 26, "resets_at": "2026-08-07T17:20:00.489883+00:00", "scope": null},
+                {"kind": "weekly_all", "percent": 25, "resets_at": "2026-08-13T02:00:00.489908+00:00", "scope": null},
+                {"kind": "weekly_scoped", "percent": 27, "resets_at": "2026-08-13T02:00:00.490165+00:00",
+                 "scope": {"model": {"display_name": "Fable", "id": null}, "surface": null}}
+            ]
+        }"#;
+        let resp: UsageResponse = serde_json::from_str(json).unwrap();
+        let scoped = to_scoped(resp.limits);
+
+        // session and weekly_all are dropped: they restate five_hour/seven_day.
+        assert_eq!(scoped.len(), 1);
+        assert_eq!(scoped[0].label, "Fable");
+        assert_eq!(scoped[0].window.used_percent, Some(27));
+        assert_eq!(scoped[0].window.window_minutes, Some(10080));
+        assert!(scoped[0].window.resets_at_unix.is_some());
+    }
+
+    #[test]
+    fn scoped_limits_absent_when_limits_missing() {
+        let json = r#"{"five_hour": {"utilization": 50.0}}"#;
+        let resp: UsageResponse = serde_json::from_str(json).unwrap();
+        assert!(to_scoped(resp.limits).is_empty());
+    }
+
+    #[test]
+    fn scoped_limit_without_model_name_is_skipped() {
+        // A scoped limit that names no model has nothing to label a segment
+        // with, so it is dropped rather than rendered as an anonymous figure.
+        let json = r#"{
+            "limits": [
+                {"kind": "weekly_scoped", "percent": 40, "scope": {"surface": "code"}},
+                {"kind": "weekly_scoped", "percent": 41, "scope": null}
+            ]
+        }"#;
+        let resp: UsageResponse = serde_json::from_str(json).unwrap();
+        assert!(to_scoped(resp.limits).is_empty());
+    }
+
+    #[test]
+    fn scoped_limit_percent_is_rounded_and_clamped() {
+        let json = r#"{
+            "limits": [
+                {"kind": "weekly_scoped", "percent": 26.6, "scope": {"model": {"display_name": "Fable"}}},
+                {"kind": "weekly_scoped", "percent": 140.0, "scope": {"model": {"display_name": "Opus"}}}
+            ]
+        }"#;
+        let resp: UsageResponse = serde_json::from_str(json).unwrap();
+        let scoped = to_scoped(resp.limits);
+        assert_eq!(scoped[0].window.used_percent, Some(27));
+        assert_eq!(scoped[1].window.used_percent, Some(100));
     }
 }
