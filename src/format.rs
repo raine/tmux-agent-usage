@@ -238,7 +238,7 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                 .unwrap_or_else(|| format!("{}·", t.dim));
             let pri_rst = reset_spark(pri_window, t);
             let sec_rst = reset_spark(sec_window, t);
-            // Scoped windows get a spark pair each, with no label — compact
+            // Scoped windows get a spark pair each with no label. Compact
             // mode is glyph-only by design, and their order is the API's.
             let scoped: String = s
                 .scoped
@@ -286,8 +286,9 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                     .and_then(|w| w.resets_at_unix)
                     .map(|r| format!(" {}↻ {}", t.dim, format_time_remaining(r)))
                     .unwrap_or_else(|| " ".repeat(9));
+                let scoped = render_scoped_ansi(&s.scoped, t);
                 return format!(
-                    "{name_color}{padded_name} {}│ {}{sec_label_long} {sec_a}{sec_spark}{sec_reset}{}",
+                    "{name_color}{padded_name} {}│ {}{sec_label_long} {sec_a}{sec_spark}{sec_reset}{scoped}{}",
                     t.dim, t.dim, t.reset
                 );
             }
@@ -338,13 +339,11 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
 
 /// Scoped windows for the tmux status line: ` │ Fable:27% ⣧`.
 ///
-/// The scope label replaces the window label — a per-model weekly limit is
-/// identified by its model, and repeating "wk" for each would be noise.
+/// The scope label identifies each per-model weekly limit, so repeating "wk"
+/// for each window would be noise.
 ///
-/// A single `│` separates the group from the plan-wide windows, matching what
-/// ANSI mode already does between columns. Without it the scoped figures read
-/// as further windows of the same allowance, which is exactly what they are
-/// not.
+/// A single `│` marks the boundary between plan-wide and scoped windows,
+/// matching the column separators in ANSI mode.
 fn render_scoped_tmux(scoped: &[ScopedWindow], t: &Theme) -> String {
     if scoped.is_empty() {
         return String::new();

@@ -7,6 +7,11 @@ const CLAUDE_ORANGE: &str = "#[fg=#d97757]";
 const GREEN: &str = "#[fg=colour114]";
 const YELLOW: &str = "#[fg=colour221]";
 const RED: &str = "#[fg=colour203]";
+const ANSI_DIM: &str = "\x1b[38;5;245m";
+const ANSI_CLAUDE_ORANGE: &str = "\x1b[38;2;217;119;87m";
+const ANSI_GREEN: &str = "\x1b[38;5;114m";
+const ANSI_YELLOW: &str = "\x1b[38;5;221m";
+const ANSI_RESET: &str = "\x1b[0m";
 
 #[test]
 fn render_full_codex_snapshot() {
@@ -324,6 +329,62 @@ fn render_multiple_scoped_windows_in_order() {
         format!(
             "{CLAUDE_ORANGE}Claude {DIM}wk:{GREEN}10% {DIVIDER}│ {DIM}Fable:{YELLOW}55% {DIM}Opus:{RED}90%"
         )
+    );
+}
+
+#[test]
+fn render_scoped_window_in_ansi_with_only_secondary_plan_window() {
+    let s = Snapshot {
+        provider: ProviderId::Claude,
+        primary: None,
+        secondary: Some(Window {
+            used_percent: Some(10),
+            window_minutes: Some(10080),
+            resets_at_unix: None,
+        }),
+        credits: None,
+        scoped: vec![ScopedWindow {
+            label: "Fable".to_string(),
+            window: Window {
+                used_percent: Some(55),
+                window_minutes: Some(10080),
+                resets_at_unix: None,
+            },
+        }],
+        observed_at_unix: 0,
+    };
+    assert_eq!(
+        format::render_with_mode(Some(&s), format::ColorMode::Ansi),
+        format!(
+            "{ANSI_CLAUDE_ORANGE}Claude  {ANSI_DIM}│ {ANSI_DIM}week {ANSI_GREEN} 10% {ANSI_GREEN}▁          {ANSI_DIM}│ {ANSI_DIM}Fable {ANSI_YELLOW} 55% {ANSI_YELLOW}▄         {ANSI_RESET}"
+        )
+    );
+}
+
+#[test]
+fn render_scoped_window_in_compact_mode() {
+    let s = Snapshot {
+        provider: ProviderId::Claude,
+        primary: None,
+        secondary: Some(Window {
+            used_percent: Some(10),
+            window_minutes: Some(10080),
+            resets_at_unix: None,
+        }),
+        credits: None,
+        scoped: vec![ScopedWindow {
+            label: "Fable".to_string(),
+            window: Window {
+                used_percent: Some(55),
+                window_minutes: Some(10080),
+                resets_at_unix: None,
+            },
+        }],
+        observed_at_unix: 0,
+    };
+    assert_eq!(
+        format::render_with_mode(Some(&s), format::ColorMode::TmuxCompact),
+        format!("{CLAUDE_ORANGE}C {DIM}·{DIM}▁{GREEN}▁{DIM}▁{YELLOW}▄{DIM}▁")
     );
 }
 

@@ -71,9 +71,8 @@ fn load_corrupt_file_returns_none() {
 
 #[test]
 fn reads_cache_written_before_scoped_field_existed() {
-    // Upgrade path: caches on disk predate `scoped`. Without #[serde(default)]
-    // every user's first run after upgrading would fail to deserialize and
-    // silently re-probe.
+    // Cache files containing only plan-wide windows deserialize with an empty
+    // scoped list.
     let json = r#"{
         "provider": "claude",
         "primary": {"used_percent": 26, "window_minutes": 300, "resets_at_unix": null},

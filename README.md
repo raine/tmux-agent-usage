@@ -80,9 +80,8 @@ window, and are shown after it under the model's own name:
 Claude 5h:3% ⣿ wk:62% ⡇ Fable:84% ⡇
 ```
 
-These are read from the response's `limits` array, so whichever models the
-account has a scoped limit for are picked up automatically — no model names are
-hardcoded.
+These are read from the response's `limits` array, so the account's scoped model
+limits are picked up automatically. Model names are not hardcoded.
 
 ### z.ai
 

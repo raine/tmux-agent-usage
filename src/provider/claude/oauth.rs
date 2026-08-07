@@ -118,10 +118,9 @@ struct UsageWindow {
     resets_at: Option<String>,
 }
 
-/// One entry of the API's `limits` array. This is where per-model weekly
-/// counters now live: the dedicated `seven_day_opus` / `seven_day_sonnet`
-/// fields still exist in the payload but are null, so reading them is no
-/// longer enough to see a model-scoped limit.
+/// One entry from the API's `limits` array. Per-model weekly counters use this
+/// shape. The dedicated `seven_day_opus` and `seven_day_sonnet` fields can be
+/// null, so model-scoped usage comes from `limits`.
 #[derive(Deserialize)]
 struct LimitEntry {
     kind: Option<String>,

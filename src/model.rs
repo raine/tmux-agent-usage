@@ -27,9 +27,8 @@ pub struct Window {
     pub resets_at_unix: Option<i64>,
 }
 
-/// A usage window that meters part of a plan rather than the whole of it —
-/// currently Claude's per-model weekly limits, which are counted separately
-/// from the plan-wide weekly window.
+/// A usage window that meters a scoped part of a plan. Claude uses these for
+/// per-model weekly limits counted separately from the plan-wide weekly window.
 ///
 /// `label` is the provider's own name for the scope (a model display name, for
 /// instance) and is rendered verbatim, so a provider can add or rename scopes
@@ -52,9 +51,9 @@ pub struct Snapshot {
     pub primary: Option<Window>,
     pub secondary: Option<Window>,
     pub credits: Option<Credits>,
-    /// Extra windows beyond primary/secondary. `serde(default)` keeps cache
-    /// files written by older versions readable — without it every user's
-    /// cache would fail to deserialize once on upgrade.
+    /// Extra windows beyond primary and secondary. Missing `scoped` fields
+    /// deserialize to an empty list, preserving compatibility with cache files
+    /// that contain only the plan-wide windows.
     #[serde(default)]
     pub scoped: Vec<ScopedWindow>,
     pub observed_at_unix: i64,
