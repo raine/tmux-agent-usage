@@ -2,6 +2,7 @@ use agent_usage::format;
 use agent_usage::model::{Credits, ProviderId, ScopedWindow, Snapshot, Window};
 
 const DIM: &str = "#[fg=colour245]";
+const DIVIDER: &str = "#[fg=colour250]";
 const CLAUDE_ORANGE: &str = "#[fg=#d97757]";
 const GREEN: &str = "#[fg=colour114]";
 const YELLOW: &str = "#[fg=colour221]";
@@ -282,7 +283,7 @@ fn render_scoped_window_after_plan_windows() {
     assert_eq!(
         format::render(Some(&s)),
         format!(
-            "{CLAUDE_ORANGE}Claude {DIM}5h:{GREEN}26% {DIM}wk:{GREEN}25% {DIM}│ {DIM}Fable:{GREEN}27%"
+            "{CLAUDE_ORANGE}Claude {DIM}5h:{GREEN}26% {DIM}wk:{GREEN}25% {DIVIDER}│ {DIM}Fable:{GREEN}27%"
         )
     );
 }
@@ -321,7 +322,7 @@ fn render_multiple_scoped_windows_in_order() {
     assert_eq!(
         format::render(Some(&s)),
         format!(
-            "{CLAUDE_ORANGE}Claude {DIM}wk:{GREEN}10% {DIM}│ {DIM}Fable:{YELLOW}55% {DIM}Opus:{RED}90%"
+            "{CLAUDE_ORANGE}Claude {DIM}wk:{GREEN}10% {DIVIDER}│ {DIM}Fable:{YELLOW}55% {DIM}Opus:{RED}90%"
         )
     );
 }

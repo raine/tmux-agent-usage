@@ -13,6 +13,10 @@ const SPARK_LEVELS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇',
 
 struct Theme {
     dim: &'static str,
+    /// Dividers only. Brighter than `dim`, which at colour245 sits close
+    /// enough to a dark status-bar background (dracula's is #282a36) to be
+    /// hard to make out, and a divider nobody can see is not doing its job.
+    divider: &'static str,
     claude_orange: &'static str,
     green: &'static str,
     yellow: &'static str,
@@ -22,6 +26,7 @@ struct Theme {
 
 const TMUX_THEME: Theme = Theme {
     dim: "#[fg=colour245]",
+    divider: "#[fg=colour250]",
     claude_orange: "#[fg=#d97757]",
     green: "#[fg=colour114]",
     yellow: "#[fg=colour221]",
@@ -31,6 +36,7 @@ const TMUX_THEME: Theme = Theme {
 
 const ANSI_THEME: Theme = Theme {
     dim: "\x1b[38;5;245m",
+    divider: "\x1b[38;5;250m",
     claude_orange: "\x1b[38;2;217;119;87m",
     green: "\x1b[38;5;114m",
     yellow: "\x1b[38;5;221m",
@@ -355,7 +361,7 @@ fn render_scoped_tmux(scoped: &[ScopedWindow], t: &Theme) -> String {
             )
         })
         .collect();
-    format!(" {}│{windows}", t.dim)
+    format!(" {}│{windows}", t.divider)
 }
 
 /// Scoped windows for the wide ANSI line, matching the column layout of the
