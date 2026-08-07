@@ -330,12 +330,20 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
     }
 }
 
-/// Scoped windows for the tmux status line: ` Fable:27% ⣧` per entry.
+/// Scoped windows for the tmux status line: ` │ Fable:27% ⣧`.
 ///
 /// The scope label replaces the window label — a per-model weekly limit is
 /// identified by its model, and repeating "wk" for each would be noise.
+///
+/// A single `│` separates the group from the plan-wide windows, matching what
+/// ANSI mode already does between columns. Without it the scoped figures read
+/// as further windows of the same allowance, which is exactly what they are
+/// not.
 fn render_scoped_tmux(scoped: &[ScopedWindow], t: &Theme) -> String {
-    scoped
+    if scoped.is_empty() {
+        return String::new();
+    }
+    let windows: String = scoped
         .iter()
         .map(|sw| {
             format!(
@@ -346,7 +354,8 @@ fn render_scoped_tmux(scoped: &[ScopedWindow], t: &Theme) -> String {
                 reset_indicator(Some(&sw.window), t)
             )
         })
-        .collect()
+        .collect();
+    format!(" {}│{windows}", t.dim)
 }
 
 /// Scoped windows for the wide ANSI line, matching the column layout of the

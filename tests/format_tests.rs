@@ -282,7 +282,7 @@ fn render_scoped_window_after_plan_windows() {
     assert_eq!(
         format::render(Some(&s)),
         format!(
-            "{CLAUDE_ORANGE}Claude {DIM}5h:{GREEN}26% {DIM}wk:{GREEN}25% {DIM}Fable:{GREEN}27%"
+            "{CLAUDE_ORANGE}Claude {DIM}5h:{GREEN}26% {DIM}wk:{GREEN}25% {DIM}│ {DIM}Fable:{GREEN}27%"
         )
     );
 }
@@ -321,7 +321,7 @@ fn render_multiple_scoped_windows_in_order() {
     assert_eq!(
         format::render(Some(&s)),
         format!(
-            "{CLAUDE_ORANGE}Claude {DIM}wk:{GREEN}10% {DIM}Fable:{YELLOW}55% {DIM}Opus:{RED}90%"
+            "{CLAUDE_ORANGE}Claude {DIM}wk:{GREEN}10% {DIM}│ {DIM}Fable:{YELLOW}55% {DIM}Opus:{RED}90%"
         )
     );
 }
