@@ -106,6 +106,7 @@ fn parse_limits_response(resp: &Value) -> Result<Snapshot> {
         primary: limits.get("primary").map(parse_window),
         secondary: limits.get("secondary").map(parse_window),
         credits: limits.get("credits").map(parse_credits),
+        scoped: Vec::new(),
         observed_at_unix: now,
     })
 }

@@ -73,6 +73,16 @@ Reads OAuth credentials from macOS Keychain (falling back to
 `api.anthropic.com/api/oauth/usage` endpoint. Requires being logged into Claude
 Code.
 
+Per-model weekly limits are metered separately from the plan-wide weekly
+window, and are shown after it under the model's own name:
+
+```
+Claude 5h:3% ⣿ wk:62% ⡇ Fable:84% ⡇
+```
+
+These are read from the response's `limits` array, so the account's scoped model
+limits are picked up automatically. Model names are not hardcoded.
+
 ### z.ai
 
 Queries `api.z.ai/api/monitor/usage/quota/limit` with a Bearer token from

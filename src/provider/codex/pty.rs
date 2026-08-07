@@ -136,6 +136,7 @@ fn parse_status_output(text: &str) -> Result<Snapshot> {
             resets_at_unix: None,
         }),
         credits,
+        scoped: Vec::new(),
         observed_at_unix: now,
     })
 }

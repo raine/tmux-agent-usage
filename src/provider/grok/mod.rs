@@ -163,6 +163,7 @@ fn parse_response(resp: BillingResponse) -> Result<Snapshot> {
             resets_at_unix: reset,
         }),
         credits: None,
+        scoped: Vec::new(),
         observed_at_unix: now_unix(),
     })
 }

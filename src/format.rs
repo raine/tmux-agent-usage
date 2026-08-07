@@ -1,4 +1,4 @@
-use crate::model::{ProviderId, Snapshot, Window};
+use crate::model::{ProviderId, ScopedWindow, Snapshot, Window};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -13,6 +13,10 @@ const SPARK_LEVELS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇',
 
 struct Theme {
     dim: &'static str,
+    /// Dividers only. Brighter than `dim`, which at colour245 sits close
+    /// enough to a dark status-bar background (dracula's is #282a36) to be
+    /// hard to make out, and a divider nobody can see is not doing its job.
+    divider: &'static str,
     claude_orange: &'static str,
     green: &'static str,
     yellow: &'static str,
@@ -22,6 +26,7 @@ struct Theme {
 
 const TMUX_THEME: Theme = Theme {
     dim: "#[fg=colour245]",
+    divider: "#[fg=colour250]",
     claude_orange: "#[fg=#d97757]",
     green: "#[fg=colour114]",
     yellow: "#[fg=colour221]",
@@ -31,6 +36,7 @@ const TMUX_THEME: Theme = Theme {
 
 const ANSI_THEME: Theme = Theme {
     dim: "\x1b[38;5;245m",
+    divider: "\x1b[38;5;250m",
     claude_orange: "\x1b[38;2;217;119;87m",
     green: "\x1b[38;5;114m",
     yellow: "\x1b[38;5;221m",
@@ -232,14 +238,32 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                 .unwrap_or_else(|| format!("{}·", t.dim));
             let pri_rst = reset_spark(pri_window, t);
             let sec_rst = reset_spark(sec_window, t);
-            format!("{name_color}{short} {pri_spark}{pri_rst}{sec_spark}{sec_rst}")
+            // Scoped windows get a spark pair each with no label. Compact
+            // mode is glyph-only by design, and their order is the API's.
+            let scoped: String = s
+                .scoped
+                .iter()
+                .map(|sw| {
+                    let spark = sw
+                        .window
+                        .used_percent
+                        .map(|p| percent_spark(p, t))
+                        .unwrap_or_else(|| format!("{}·", t.dim));
+                    format!("{spark}{}", reset_spark(Some(&sw.window), t))
+                })
+                .collect();
+            format!("{name_color}{short} {pri_spark}{pri_rst}{sec_spark}{sec_rst}{scoped}")
         }
         ColorMode::Tmux => {
+            let scoped = render_scoped_tmux(&s.scoped, t);
             if s.primary.is_none() && s.secondary.is_some() {
-                return format!("{name_color}{name} {}{sec_label}:{sec}{sec_reset}", t.dim);
+                return format!(
+                    "{name_color}{name} {}{sec_label}:{sec}{sec_reset}{scoped}",
+                    t.dim
+                );
             }
             format!(
-                "{name_color}{name} {}{pri_label}:{pri}{pri_reset} {}{sec_label}:{sec}{sec_reset}",
+                "{name_color}{name} {}{pri_label}:{pri}{pri_reset} {}{sec_label}:{sec}{sec_reset}{scoped}",
                 t.dim, t.dim
             )
         }
@@ -262,8 +286,9 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                     .and_then(|w| w.resets_at_unix)
                     .map(|r| format!(" {}↻ {}", t.dim, format_time_remaining(r)))
                     .unwrap_or_else(|| " ".repeat(9));
+                let scoped = render_scoped_ansi(&s.scoped, t);
                 return format!(
-                    "{name_color}{padded_name} {}│ {}{sec_label_long} {sec_a}{sec_spark}{sec_reset}{}",
+                    "{name_color}{padded_name} {}│ {}{sec_label_long} {sec_a}{sec_spark}{sec_reset}{scoped}{}",
                     t.dim, t.dim, t.reset
                 );
             }
@@ -303,12 +328,61 @@ pub fn render_with_mode(snapshot: Option<&Snapshot>, mode: ColorMode) -> String 
                 .map(|r| format!(" {}↻ {}", t.dim, format_time_remaining(r)))
                 .unwrap_or_else(|| " ".repeat(9));
 
+            let scoped = render_scoped_ansi(&s.scoped, t);
             format!(
-                "{name_color}{padded_name} {}│ {}{pri_label_long} {pri_a}{pri_spark}{pri_reset} {}│ {}{sec_label_long} {sec_a}{sec_spark}{sec_reset}{}",
+                "{name_color}{padded_name} {}│ {}{pri_label_long} {pri_a}{pri_spark}{pri_reset} {}│ {}{sec_label_long} {sec_a}{sec_spark}{sec_reset}{scoped}{}",
                 t.dim, t.dim, t.dim, t.dim, t.reset
             )
         }
     }
+}
+
+/// Scoped windows for the tmux status line: ` │ Fable:27% ⣧`.
+///
+/// The scope label identifies each per-model weekly limit, so repeating "wk"
+/// for each window would be noise.
+///
+/// A single `│` marks the boundary between plan-wide and scoped windows,
+/// matching the column separators in ANSI mode.
+fn render_scoped_tmux(scoped: &[ScopedWindow], t: &Theme) -> String {
+    if scoped.is_empty() {
+        return String::new();
+    }
+    let windows: String = scoped
+        .iter()
+        .map(|sw| {
+            format!(
+                " {}{}:{}{}",
+                t.dim,
+                sw.label,
+                render_percent(sw.window.used_percent, t),
+                reset_indicator(Some(&sw.window), t)
+            )
+        })
+        .collect();
+    format!(" {}│{windows}", t.divider)
+}
+
+/// Scoped windows for the wide ANSI line, matching the column layout of the
+/// primary and secondary windows.
+fn render_scoped_ansi(scoped: &[ScopedWindow], t: &Theme) -> String {
+    scoped
+        .iter()
+        .map(|sw| {
+            let pct = render_percent_aligned(sw.window.used_percent, t);
+            let spark = sw
+                .window
+                .used_percent
+                .map(|p| format!(" {}", percent_spark(p, t)))
+                .unwrap_or_default();
+            let reset = sw
+                .window
+                .resets_at_unix
+                .map(|r| format!(" {}↻ {}", t.dim, format_time_remaining(r)))
+                .unwrap_or_else(|| " ".repeat(9));
+            format!(" {}│ {}{:4} {pct}{spark}{reset}", t.dim, t.dim, sw.label)
+        })
+        .collect()
 }
 
 /// Render a failure line for a specific provider.

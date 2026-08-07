@@ -117,6 +117,7 @@ fn parse_response(resp: QuotaResponse) -> Result<Snapshot> {
         primary,
         secondary,
         credits: None,
+        scoped: Vec::new(),
         observed_at_unix: now,
     })
 }
