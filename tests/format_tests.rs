@@ -230,7 +230,7 @@ fn render_compact_places_weekly_primary_in_weekly_slot() {
     };
     assert_eq!(
         format::render_with_mode(Some(&s), format::ColorMode::TmuxCompact),
-        format!("{DIM}O {DIM}▁▁{YELLOW}▄{DIM}▁")
+        format!("{DIM}O {DIM}·{DIM}▁{YELLOW}▄{DIM}▁")
     );
 }
 
