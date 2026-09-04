@@ -15,7 +15,7 @@ pub fn probe_rpc() -> Result<Snapshot> {
         binary::resolve("codex", Some("CODEX_BINARY")).ok_or_else(|| anyhow!("codex not found"))?;
 
     let mut child = Command::new(&bin)
-        .args(["-s", "read-only", "-a", "untrusted", "app-server"])
+        .args(["-s", "read-only", "-a", "never", "app-server"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
