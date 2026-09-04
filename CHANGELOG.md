@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.11 (2026-09-04)
+
+- Fix Codex usage appearing unavailable with Codex 0.153.2.
+
 ## v0.1.10 (2026-08-07)
 
 - Show separately metered weekly usage limits for each Claude model. ([#3](https://github.com/raine/tmux-agent-usage/pull/3))
